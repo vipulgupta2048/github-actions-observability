@@ -1,0 +1,130 @@
+# GitHub Actions Observability Configuration - Traces and Metrics
+receivers:
+  # GitHub receiver for traces and metrics from GitHub Actions webhooks
+  github:
+    webhook:
+      endpoint: "0.0.0.0:9504"
+      path: "/events"
+      health_path: "/health"
+      secret: ${GITHUB_WEBHOOK_SECRET}
+      service_name: "github-actions"
+    scrapers:
+      scraper:
+        github_org: vipulgupta2048
+        auth:
+          authenticator: bearertokenauth
+
+extensions:
+  # Bearer token authentication for GitHub API scraping
+  bearertokenauth:
+    token: ${GITHUB_TOKEN}
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+  
+  # Add service name and environment labels
+  resource:
+    attributes:
+      - key: service.name
+        value: "github-actions"
+        action: upsert
+      - key: service.version
+        value: "1.0.0"
+        action: upsert
+      - key: deployment.environment
+        value: "production"
+        action: upsert
+
+  # Attribute processing for better trace context
+  attributes:
+    actions:
+      - key: github.repository
+        action: upsert
+        from_attribute: github.repository_name
+      - key: github.workflow
+        action: upsert
+        from_attribute: github.workflow_name
+      - key: github.job
+        action: upsert
+        from_attribute: github.job_name
+      - key: github.step
+        action: upsert
+        from_attribute: github.step_name
+      # Ensure conclusion attributes are available for spanmetrics
+      - key: workflow_conclusion
+        action: upsert
+        from_attribute: github.workflow_conclusion
+      - key: job_conclusion
+        action: upsert
+        from_attribute: github.job_conclusion
+      - key: step_conclusion
+        action: upsert
+        from_attribute: github.step_conclusion
+      # Map repository name for consistency
+      - key: repository_name
+        action: upsert
+        from_attribute: github.repository_name
+
+exporters:
+  # Export metrics to Prometheus scrape endpoint
+  prometheus:
+    endpoint: "0.0.0.0:9464"
+    namespace: "github_actions"
+    const_labels:
+      service: "github-actions"
+    resource_to_telemetry_conversion:
+      enabled: true
+  
+  # Debug exporter for troubleshooting
+  debug:
+    verbosity: detailed
+    sampling_initial: 2
+    sampling_thereafter: 500
+
+connectors:
+  # Generate metrics from spans for Prometheus (RED metrics)
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms, 500ms, 1000ms, 2000ms, 5s, 10s, 20s, 40s, 60s]
+    dimensions:
+      - name: github.repository
+        default: "unknown"
+      - name: github.workflow
+        default: "unknown" 
+      - name: github.job
+        default: "unknown"
+      - name: workflow_conclusion
+        default: "unknown"
+      - name: job_conclusion
+        default: "unknown"
+      - name: step_conclusion
+        default: "unknown"
+    exemplars:
+      enabled: true
+    dimensions_cache_size: 1000
+    aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
+    metrics_flush_interval: 15s
+    metrics_expiration: 5m
+    namespace: github_actions
+    resource_metrics_key_attributes:
+      - service.name
+      - service.version
+      - deployment.environment
+
+service:
+  extensions: [bearertokenauth]
+  pipelines:
+    # Traces pipeline for GitHub Actions workflow spans
+    traces:
+      receivers: [github]
+      processors: [resource, attributes, batch]
+      exporters: [debug, spanmetrics]
+    
+    # Metrics pipeline for GitHub Actions metrics (includes span-derived metrics)
+    metrics:
+      receivers: [github, spanmetrics]
+      processors: [resource, batch]
+      exporters: [prometheus, debug]

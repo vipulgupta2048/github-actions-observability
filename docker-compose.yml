@@ -1,0 +1,67 @@
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
+    command: ["--config", "/etc/otel/collector-config.yaml"]
+    volumes:
+      - ./collector-config.yaml:/etc/otel/collector-config.yaml
+      - otel_data:/var/lib/otelcol  # Persistent storage for collector data
+    ports:
+      - "9504:9504"
+      - "9464:9464"
+    networks:
+      - observability
+
+  prometheus:
+    image: prom/prometheus:latest
+    depends_on:
+      - collector
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus  # Persistent storage for metrics data
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"  # Keep 30 days of data
+      - "--web.enable-lifecycle"  # Allow config reload
+    ports:
+      - "9090:9090"
+    networks:
+      - observability
+
+  # Removed Tempo and Loki - using Prometheus-only observability
+
+  grafana:
+    image: grafana/grafana:latest
+    depends_on:
+      - prometheus
+      - collector
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana  # Persistent storage for Grafana data
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_DASHBOARDS_JSON_ENABLED=true
+      - GF_DASHBOARDS_JSON_PATH=/var/lib/grafana/dashboards
+    ports:
+      - "3000:3000"
+    networks:
+      - observability
+
+# Named volumes for persistent storage across deployments
+volumes:
+  otel_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# Network for service communication
+networks:
+  observability:
+    driver: bridge
+  
