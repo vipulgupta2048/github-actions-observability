@@ -1,0 +1,386 @@
+{
+  "id": null,
+  "uid": "gh-complete-metrics",
+  "title": "GitHub Actions - Complete Metrics Dashboard",
+  "tags": ["github", "actions", "complete", "vcs", "metrics", "vanilla"],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "description": "Complete dashboard showing ALL GitHub Actions and VCS metrics from the vanilla repository - every single data point visualized",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "repository_filter",
+        "type": "constant",
+        "current": {"text": "vanilla", "value": "vanilla"},
+        "label": "Repository",
+        "description": "Fixed to vanilla repository"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "🏠 Repository Overview",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "title": "Repository Count",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "github_actions_vcs_repository_count",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "displayName": "Repositories",
+          "color": {"mode": "palette-classic"}
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1}
+    },
+    {
+      "id": 3,
+      "title": "VCS References Count by Type",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum by (vcs_ref_type) (github_actions_vcs_ref_count{vcs_repository_name=\"vanilla\"})",
+          "refId": "A",
+          "legendFormat": "{{vcs_ref_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {"mode": "palette-classic"}
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1}
+    },
+    {
+      "id": 4,
+      "title": "VCS Changes by State",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum by (vcs_change_state) (github_actions_vcs_change_count{vcs_repository_name=\"vanilla\"})",
+          "refId": "A",
+          "legendFormat": "{{vcs_change_state}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {"mode": "palette-classic"}
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1}
+    },
+    {
+      "id": 5,
+      "title": "Repository Details",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "github_actions_vcs_repository_count",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "left"}
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1}
+    },
+    {
+      "id": 10,
+      "title": "📊 VCS Change Analysis",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5}
+    },
+    {
+      "id": 11,
+      "title": "Change Duration Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "github_actions_vcs_change_duration_seconds{vcs_repository_name=\"vanilla\"}",
+          "refId": "A",
+          "legendFormat": "Change Duration ({{vcs_change_state}})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {"drawStyle": "line", "lineInterpolation": "smooth"}
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6}
+    },
+    {
+      "id": 12,
+      "title": "Time to Approval vs Time to Merge",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "github_actions_vcs_change_time_to_approval_seconds{vcs_repository_name=\"vanilla\"}",
+          "refId": "A",
+          "legendFormat": "Time to Approval"
+        },
+        {
+          "expr": "github_actions_vcs_change_time_to_merge_seconds{vcs_repository_name=\"vanilla\"}",
+          "refId": "B",
+          "legendFormat": "Time to Merge"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {"drawStyle": "line", "lineInterpolation": "smooth"}
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6}
+    },
+    {
+      "id": 20,
+      "title": "🌿 VCS Reference Analysis",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14}
+    },
+    {
+      "id": 21,
+      "title": "Lines Delta Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "github_actions_vcs_ref_lines_delta{vcs_repository_name=\"vanilla\"}",
+          "refId": "A",
+          "legendFormat": "Lines Delta ({{vcs_ref_type}})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {"drawStyle": "bars", "fillOpacity": 80}
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 15}
+    },
+    {
+      "id": 22,
+      "title": "Revisions Delta",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "github_actions_vcs_ref_revisions_delta{vcs_repository_name=\"vanilla\"}",
+          "refId": "A",
+          "legendFormat": "Revisions Delta ({{vcs_ref_type}})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {"drawStyle": "points", "pointSize": 5}
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 15}
+    },
+    {
+      "id": 30,
+      "title": "⚡ GitHub Actions Workflow Data",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23}
+    },
+    {
+      "id": 31,
+      "title": "GitHub Actions Calls Total",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(github_actions_github_actions_calls_total[5m])",
+          "refId": "A",
+          "legendFormat": "Action Calls/sec"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 20}
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+    },
+    {
+      "id": 32,
+      "title": "GitHub Actions Duration Distribution",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(github_actions_github_actions_duration_milliseconds_sum[5m]) / rate(github_actions_github_actions_duration_milliseconds_count[5m])",
+          "refId": "A",
+          "legendFormat": "Avg Duration"
+        },
+        {
+          "expr": "histogram_quantile(0.50, rate(github_actions_github_actions_duration_milliseconds_bucket[5m]))",
+          "refId": "B",
+          "legendFormat": "50th percentile"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(github_actions_github_actions_duration_milliseconds_bucket[5m]))",
+          "refId": "C",
+          "legendFormat": "95th percentile"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": {"drawStyle": "line", "lineInterpolation": "smooth"}
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+    },
+    {
+      "id": 40,
+      "title": "🎯 Span Metrics (From Webhook Traces)",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 32}
+    },
+    {
+      "id": 41,
+      "title": "Span Calls by Workflow Step",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (span_name) (rate(github_actions_traces_span_metrics_calls_total{service_name=\"github-actions\"}[5m]))",
+          "refId": "A",
+          "legendFormat": "{{span_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "stacking": {"mode": "normal"}}
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "bottom", "values": ["last", "max"]}
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 33}
+    },
+    {
+      "id": 42,
+      "title": "Span Duration by Step",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (span_name) (rate(github_actions_traces_span_metrics_duration_seconds_sum{service_name=\"github-actions\"}[5m])) / sum by (span_name) (rate(github_actions_traces_span_metrics_duration_seconds_count{service_name=\"github-actions\"}[5m]))",
+          "refId": "A",
+          "legendFormat": "{{span_name}} avg duration"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {"drawStyle": "line", "lineInterpolation": "smooth"}
+        }
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 41}
+    },
+    {
+      "id": 50,
+      "title": "📋 Complete Data Inventory Table",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 49}
+    },
+    {
+      "id": 51,
+      "title": "All VCS Change Data",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "github_actions_vcs_change_count{vcs_repository_name=\"vanilla\"}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "github_actions_vcs_change_duration_seconds{vcs_repository_name=\"vanilla\"}",
+          "refId": "B",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "github_actions_vcs_change_time_to_approval_seconds{vcs_repository_name=\"vanilla\"}",
+          "refId": "C",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "github_actions_vcs_change_time_to_merge_seconds{vcs_repository_name=\"vanilla\"}",
+          "refId": "D",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "left", "filterable": true}
+        }
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 50}
+    },
+    {
+      "id": 52,
+      "title": "All VCS Ref Data",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "github_actions_vcs_ref_count{vcs_repository_name=\"vanilla\"}",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "github_actions_vcs_ref_lines_delta{vcs_repository_name=\"vanilla\"}",
+          "refId": "B",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "github_actions_vcs_ref_revisions_delta{vcs_repository_name=\"vanilla\"}",
+          "refId": "C",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "left", "filterable": true}
+        }
+      },
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 58}
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 37,
+  "version": 1
+}

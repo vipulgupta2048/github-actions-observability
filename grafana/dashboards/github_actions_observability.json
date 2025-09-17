@@ -1,15 +1,16 @@
 {
   "id": null,
-  "title": "GitHub Actions Observability",
+  "title": "GitHub Actions Overview & Observability",
   "tags": [
     "github",
     "actions",
+    "overview",
     "ci/cd",
     "otel",
-    "workflows"
+    "observability"
   ],
   "timezone": "browser",
-  "description": "Comprehensive observability dashboard for GitHub Actions workflows, jobs, and steps with OpenTelemetry",
+  "description": "Comprehensive overview and observability dashboard for GitHub Actions workflows, jobs, and steps with OpenTelemetry - optimized for enterprise scale",
   "panels": [
     {
       "id": 1,
@@ -17,15 +18,15 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(rate(github_actions_workflow_run_duration_seconds_count[5m])) * 300",
+          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total[5m])) * 300",
           "refId": "A",
-          "legendFormat": "Runs/5min"
+          "legendFormat": "Calls/5min"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "displayName": "Workflow Runs (5min)",
+          "displayName": "Workflow Calls (5min)",
           "color": {
             "mode": "palette-classic"
           }
@@ -44,7 +45,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(rate(github_actions_workflow_run_duration_seconds_count{workflow_conclusion=\"success\"}[5m])) / sum(rate(github_actions_workflow_run_duration_seconds_count[5m])) * 100",
+          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total{status_code=\"STATUS_CODE_OK\"}[5m])) / sum(rate(github_actions_traces_span_metrics_calls_total[5m])) * 100",
           "refId": "A"
         }
       ],
@@ -57,18 +58,9 @@
           },
           "thresholds": {
             "steps": [
-              {
-                "color": "red",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 80
-              },
-              {
-                "color": "green",
-                "value": 95
-              }
+              {"color": "red", "value": 0},
+              {"color": "yellow", "value": 80},
+              {"color": "green", "value": 95}
             ]
           }
         }
@@ -82,11 +74,11 @@
     },
     {
       "id": 3,
-      "title": "Average Workflow Duration",
+      "title": "Average Duration",
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(rate(github_actions_workflow_run_duration_seconds_sum[5m])) / sum(rate(github_actions_workflow_run_duration_seconds_count[5m]))",
+          "expr": "sum(rate(github_actions_traces_span_metrics_duration_seconds_sum[5m])) / sum(rate(github_actions_traces_span_metrics_duration_seconds_count[5m]))",
           "refId": "A"
         }
       ],
@@ -108,36 +100,20 @@
     },
     {
       "id": 4,
-      "title": "Failed Workflows",
+      "title": "Active Workflows",
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(rate(github_actions_workflow_run_duration_seconds_count{workflow_conclusion=\"failure\"}[5m])) * 300",
+          "expr": "count(count by (span_name) (github_actions_traces_span_metrics_calls_total))",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "displayName": "Failures (5min)",
+          "displayName": "Active Workflows",
           "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 5
-              }
-            ]
+            "mode": "palette-classic"
           }
         }
       },
@@ -150,406 +126,181 @@
     },
     {
       "id": 5,
-      "title": "Workflow Run Status Distribution",
-      "type": "piechart",
+      "title": "Workflow Execution Rate",
+      "type": "graph",
       "targets": [
         {
-          "expr": "sum by (workflow_conclusion) (rate(github_actions_workflow_run_duration_seconds_count[5m]))",
+          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total[5m]))",
           "refId": "A",
-          "legendFormat": "{{workflow_conclusion}}"
+          "legendFormat": "Total Rate"
+        },
+        {
+          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total{status_code=\"STATUS_CODE_OK\"}[5m]))",
+          "refId": "B",
+          "legendFormat": "Success Rate"
+        },
+        {
+          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total{status_code!=\"STATUS_CODE_OK\"}[5m]))",
+          "refId": "C",
+          "legendFormat": "Error Rate"
         }
       ],
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right"
+      "yAxes": [
+        {
+          "unit": "short",
+          "label": "Executions per second"
         }
-      },
+      ],
       "gridPos": {
-        "h": 10,
-        "w": 12,
+        "h": 8,
+        "w": 24,
         "x": 0,
         "y": 8
       }
     },
     {
       "id": 6,
-      "title": "Top Repositories by Workflow Activity",
+      "title": "Top Repositories by Activity",
       "type": "table",
       "targets": [
         {
-          "expr": "topk(10, sum by (repository_name) (rate(github_actions_workflow_run_duration_seconds_count[5m])))",
+          "expr": "topk(10, sum by (service_name) (github_actions_traces_span_metrics_calls_total))",
           "refId": "A",
-          "format": "table",
-          "instant": true
+          "format": "table"
         }
       ],
       "fieldConfig": {
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "repository_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Repository"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Value"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Runs/sec"
-              }
-            ]
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "__name__": true,
-              "Time": true,
-              "instance": true,
-              "job": true
-            }
+        "defaults": {
+          "custom": {
+            "align": "left"
           }
         }
-      ],
+      },
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 8
+        "x": 0,
+        "y": 16
       }
     },
     {
       "id": 7,
-      "title": "Workflow Execution Times Over Time",
-      "type": "timeseries",
+      "title": "Top Workflows by Activity",
+      "type": "table",
       "targets": [
         {
-          "expr": "sum by (workflow_name) (rate(github_actions_workflow_run_duration_seconds_sum[5m])) / sum by (workflow_name) (rate(github_actions_workflow_run_duration_seconds_count[5m]))",
+          "expr": "topk(10, sum by (span_name) (github_actions_traces_span_metrics_calls_total))",
           "refId": "A",
-          "legendFormat": "{{workflow_name}}"
+          "format": "table"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "s",
           "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "linear",
-            "barAlignment": 0,
-            "lineWidth": 1,
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "spanNulls": false,
-            "insertNulls": false,
-            "showPoints": "auto",
-            "pointSize": 5,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            },
-            "axisPlacement": "auto",
-            "axisLabel": "",
-            "axisColorMode": "text",
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "axisCenteredZero": false,
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "vis": false
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "align": "left"
           }
         }
       },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
       "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 18
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
       }
     },
     {
       "id": 8,
-      "title": "Job Execution Details",
-      "type": "timeseries",
+      "title": "Duration Percentiles",
+      "type": "graph",
       "targets": [
         {
-          "expr": "sum by (job_name, workflow_name) (rate(github_actions_job_run_duration_seconds_sum[5m])) / sum by (job_name, workflow_name) (rate(github_actions_job_run_duration_seconds_count[5m]))",
+          "expr": "histogram_quantile(0.50, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])) by (le))",
           "refId": "A",
-          "legendFormat": "{{workflow_name}}/{{job_name}}"
+          "legendFormat": "50th percentile"
+        },
+        {
+          "expr": "histogram_quantile(0.90, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])) by (le))",
+          "refId": "B",
+          "legendFormat": "90th percentile"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])) by (le))",
+          "refId": "C",
+          "legendFormat": "95th percentile"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])) by (le))",
+          "refId": "D",
+          "legendFormat": "99th percentile"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
+      "yAxes": [
+        {
           "unit": "s",
-          "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "fillOpacity": 10,
-            "showPoints": "never",
-            "stacking": {
-              "mode": "none"
-            }
-          }
+          "label": "Duration"
         }
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        }
-      },
+      ],
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 24
       }
     },
     {
       "id": 9,
-      "title": "Job Queue Time vs Execution Time",
-      "type": "timeseries",
+      "title": "Workflow Steps Analysis",
+      "type": "table",
       "targets": [
         {
-          "expr": "sum by (job_name) (rate(github_actions_job_queue_duration_seconds_sum[5m])) / sum by (job_name) (rate(github_actions_job_queue_duration_seconds_count[5m]))",
+          "expr": "sum by (span_name) (github_actions_traces_span_metrics_calls_total)",
           "refId": "A",
-          "legendFormat": "Queue: {{job_name}}"
-        },
-        {
-          "expr": "sum by (job_name) (rate(github_actions_job_run_duration_seconds_sum[5m])) / sum by (job_name) (rate(github_actions_job_run_duration_seconds_count[5m]))",
-          "refId": "B",
-          "legendFormat": "Execution: {{job_name}}"
+          "format": "table"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "s",
           "custom": {
-            "drawStyle": "line",
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "fillOpacity": 10
+            "align": "left"
           }
         }
       },
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 12,
         "x": 0,
-        "y": 38
+        "y": 32
       }
     },
     {
       "id": 10,
-      "title": "Step-by-Step Workflow Breakdown",
+      "title": "Error Analysis",
       "type": "table",
       "targets": [
         {
-          "expr": "topk(20, sum by (workflow_name, job_name, step_name) (rate(github_actions_step_run_duration_seconds_sum[5m])) / sum by (workflow_name, job_name, step_name) (rate(github_actions_step_run_duration_seconds_count[5m])))",
+          "expr": "sum by (status_code) (github_actions_traces_span_metrics_calls_total{status_code!=\"STATUS_CODE_OK\"})",
           "refId": "A",
-          "format": "table",
-          "instant": true
+          "format": "table"
         }
       ],
       "fieldConfig": {
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "workflow_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Workflow"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "job_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Job"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "step_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Step"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Value"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Avg Duration (s)"
-              },
-              {
-                "id": "unit",
-                "value": "s"
-              }
-            ]
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "__name__": true,
-              "Time": true,
-              "instance": true,
-              "job": true
-            }
+        "defaults": {
+          "custom": {
+            "align": "left"
           }
         }
-      ],
+      },
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 12,
         "x": 12,
-        "y": 38
-      }
-    },
-    {
-      "id": 11,
-      "title": "Workflow Failure Analysis",
-      "type": "table",
-      "targets": [
-        {
-          "expr": "topk(10, sum by (workflow_name, repository_name) (rate(github_actions_workflow_run_duration_seconds_count{workflow_conclusion=\"failure\"}[1h])))",
-          "refId": "A",
-          "format": "table",
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "workflow_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Workflow"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "repository_name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Repository"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Value"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Failure Rate/hr"
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "__name__": true,
-              "Time": true,
-              "instance": true,
-              "job": true
-            }
-          }
-        }
-      ],
-      "gridPos": {
-        "h": 10,
-        "w": 24,
-        "x": 0,
-        "y": 48
+        "y": 32
       }
     }
   ],
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
-  "refresh": "30s",
-  "schemaVersion": 39,
-  "version": 1,
-  "gnetId": null,
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "links": [],
-  "liveNow": false,
-  "weekStart": ""
+  "refresh": "10s"
 }

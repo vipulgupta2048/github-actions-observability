@@ -10,7 +10,8 @@ receivers:
       service_name: "github-actions"
     scrapers:
       scraper:
-        github_org: vipulgupta2048
+        github_org: ${GITHUB_ORG:-your_github_org}
+        search_query: "repo:${GITHUB_ORG:-your_github_org}/${GITHUB_REPO:-your_repo}"
         auth:
           authenticator: bearertokenauth
 
@@ -37,45 +38,23 @@ processors:
         value: "production"
         action: upsert
 
-  # Attribute processing for better trace context
+  # Map to custom dimension names to avoid conflicts
   attributes:
     actions:
-      - key: github.repository
+      - key: workflow_step
+        from_attribute: span.name
         action: upsert
-        from_attribute: github.repository_name
-      - key: github.workflow
+      - key: step_status
+        from_attribute: status.code
         action: upsert
-        from_attribute: github.workflow_name
-      - key: github.job
-        action: upsert
-        from_attribute: github.job_name
-      - key: github.step
-        action: upsert
-        from_attribute: github.step_name
-      # Ensure conclusion attributes are available for spanmetrics
-      - key: workflow_conclusion
-        action: upsert
-        from_attribute: github.workflow_conclusion
-      - key: job_conclusion
-        action: upsert
-        from_attribute: github.job_conclusion
-      - key: step_conclusion
-        action: upsert
-        from_attribute: github.step_conclusion
-      # Map repository name for consistency
-      - key: repository_name
-        action: upsert
-        from_attribute: github.repository_name
 
 exporters:
   # Export metrics to Prometheus scrape endpoint
   prometheus:
     endpoint: "0.0.0.0:9464"
     namespace: "github_actions"
-    const_labels:
-      service: "github-actions"
     resource_to_telemetry_conversion:
-      enabled: true
+      enabled: false
   
   # Debug exporter for troubleshooting
   debug:
@@ -89,26 +68,19 @@ connectors:
     histogram:
       explicit:
         buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms, 500ms, 1000ms, 2000ms, 5s, 10s, 20s, 40s, 60s]
+      unit: "s"
     dimensions:
-      - name: github.repository
+      # Use minimal custom dimensions to avoid all conflicts
+      - name: workflow_step
         default: "unknown"
-      - name: github.workflow
-        default: "unknown" 
-      - name: github.job
-        default: "unknown"
-      - name: workflow_conclusion
-        default: "unknown"
-      - name: job_conclusion
-        default: "unknown"
-      - name: step_conclusion
+      - name: step_status
         default: "unknown"
     exemplars:
       enabled: true
     dimensions_cache_size: 1000
     aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
     metrics_flush_interval: 15s
-    metrics_expiration: 5m
-    namespace: github_actions
+    metrics_expiration: 30m
     resource_metrics_key_attributes:
       - service.name
       - service.version

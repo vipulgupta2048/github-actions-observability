@@ -124,8 +124,8 @@ def main():
     token = os.getenv('GITHUB_TOKEN')
     secret = os.getenv('GITHUB_WEBHOOK_SECRET')
     tunnel_url = os.getenv('TUNNEL_URL') or os.getenv('GITHUB_WEBHOOK_URL')
-    owner = 'vipulgupta2048'
-    repo = 'vanilla'
+    owner = os.getenv('GITHUB_ORG', 'your_github_org')
+    repo = os.getenv('GITHUB_REPO', 'your_repo')
     ref = os.getenv('GITHUB_REF', 'main')
 
     if not all([token, secret, tunnel_url]):
