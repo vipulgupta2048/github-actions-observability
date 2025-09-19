@@ -1,13 +1,4 @@
-# Gi## 🎯 What You Get
-
-- **📊 Complete Metrics**: Workflow execution rates, durations, success/failure rates
-- **🔍 Distributed Traces**: Every workflow run as a detailed trace with job and step spans  
-- **📈 Rich Dashboards**: 6 pre-built Grafana dashboards for different analysis needs
-- **⚡ Real-time Data**: Live updates via GitHub webhooks with <15s latency
-- **🔄 VCS Insights**: Pull request metrics, code change analysis, merge times
-- **❌ Failure Analysis**: Identify problematic workflows, steps, and patterns
-
-> **📚 For Implementation Context**: See [`CONTEXT.md`](./CONTEXT.md) for complete setup history, architectural decisions, and troubleshooting context.ions Observability with OpenTelemetry
+# GitHub Actions Observability with OpenTelemetry
 
 Complete observability solution for GitHub Actions workflows using OpenTelemetry Collector, Prometheus, and Grafana. Monitor your CI/CD pipelines with distributed tracing, rich metrics, and real-time dashboards.
 
