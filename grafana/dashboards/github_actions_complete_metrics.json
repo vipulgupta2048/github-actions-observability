@@ -1,386 +1,752 @@
 {
-  "id": null,
-  "uid": "gh-complete-metrics",
-  "title": "GitHub Actions - Complete Metrics Dashboard",
-  "tags": ["github", "actions", "complete", "vcs", "metrics", "vanilla"],
-  "timezone": "browser",
-  "editable": true,
-  "graphTooltip": 1,
-  "description": "Complete dashboard showing ALL GitHub Actions and VCS metrics from the vanilla repository - every single data point visualized",
-  "time": {
-    "from": "now-24h",
-    "to": "now"
-  },
-  "templating": {
+  "annotations": {
     "list": [
       {
-        "name": "repository_filter",
-        "type": "constant",
-        "current": {"text": "vanilla", "value": "vanilla"},
-        "label": "Repository",
-        "description": "Fixed to vanilla repository"
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
       }
     ]
   },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
   "panels": [
     {
-      "id": 1,
-      "title": "🏠 Repository Overview",
-      "type": "row",
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0}
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "🏠 Repository Overview",
+      "type": "row"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
       "id": 2,
-      "title": "Repository Count",
-      "type": "stat",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "fields": "",
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "github_actions_vcs_repository_count",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "count(count by (service_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}))",
           "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "displayName": "Repositories",
-          "color": {"mode": "palette-classic"}
-        }
-      },
-      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1}
+      "title": "Active Services",
+      "type": "stat"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
       "id": 3,
-      "title": "VCS References Count by Type",
-      "type": "stat",
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "fields": "",
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "sum by (vcs_ref_type) (github_actions_vcs_ref_count{vcs_repository_name=\"vanilla\"})",
-          "refId": "A",
-          "legendFormat": "{{vcs_ref_type}}"
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "count(count by (workflow_step) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}))",
+          "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {"mode": "palette-classic"}
-        }
-      },
-      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1}
+      "title": "Total Workflow Steps",
+      "type": "stat"
     },
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
       "id": 4,
-      "title": "VCS Changes by State",
-      "type": "stat",
-      "targets": [
-        {
-          "expr": "sum by (vcs_change_state) (github_actions_vcs_change_count{vcs_repository_name=\"vanilla\"})",
-          "refId": "A",
-          "legendFormat": "{{vcs_change_state}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {"mode": "palette-classic"}
-        }
-      },
-      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1}
+      "panels": [],
+      "title": "📊 Workflow Execution Metrics",
+      "type": "row"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
       "id": 5,
-      "title": "Repository Details",
-      "type": "table",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "github_actions_vcs_repository_count",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "topk(10, sum by (workflow_step) (rate(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$step_status\"}[5m])))",
           "refId": "A",
+          "legendFormat": "{{workflow_step}}"
+        }
+      ],
+      "title": "Workflow Execution Rate (Top 10)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "topk(10, sum by (workflow_step) (rate(github_actions_traces_span_metrics_duration_seconds_sum{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$step_status\"}[5m])) / sum by (workflow_step) (rate(github_actions_traces_span_metrics_duration_seconds_count{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$step_status\"}[5m])))",
+          "refId": "A",
+          "legendFormat": "{{workflow_step}}"
+        }
+      ],
+      "title": "Average Step Duration (Top 10)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 7,
+      "panels": [],
+      "title": "🔍 Status Analysis",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "fields": "",
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (step_status) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$step_status\"})",
+          "refId": "A",
+          "legendFormat": "{{step_status}}"
+        }
+      ],
+      "title": "Execution Status Distribution",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step_status"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "success": {
+                        "color": "green",
+                        "index": 0
+                      },
+                      "failure": {
+                        "color": "red",
+                        "index": 1
+                      },
+                      "unset": {
+                        "color": "yellow",
+                        "index": 2
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "id": 9,
+      "options": {
+        "showHeader": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "topk(15, sum by (workflow_step, step_status) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$step_status\"}))",
           "format": "table",
-          "instant": true
+          "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {"align": "left"}
+      "title": "Step Status Summary (Top 15)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "Value": "Count",
+              "workflow_step": "Workflow Step",
+              "step_status": "Status"
+            }
+          }
         }
-      },
-      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1}
+      ],
+      "type": "table"
     },
     {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
       "id": 10,
-      "title": "📊 VCS Change Analysis",
-      "type": "row",
-      "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 5}
+      "panels": [],
+      "title": "📈 Performance Metrics",
+      "type": "row"
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
       "id": 11,
-      "title": "Change Duration Over Time",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "github_actions_vcs_change_duration_seconds{vcs_repository_name=\"vanilla\"}",
-          "refId": "A",
-          "legendFormat": "Change Duration ({{vcs_change_state}})"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {"drawStyle": "line", "lineInterpolation": "smooth"}
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6}
-    },
-    {
-      "id": 12,
-      "title": "Time to Approval vs Time to Merge",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "github_actions_vcs_change_time_to_approval_seconds{vcs_repository_name=\"vanilla\"}",
-          "refId": "A",
-          "legendFormat": "Time to Approval"
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
         },
-        {
-          "expr": "github_actions_vcs_change_time_to_merge_seconds{vcs_repository_name=\"vanilla\"}",
-          "refId": "B",
-          "legendFormat": "Time to Merge"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {"drawStyle": "line", "lineInterpolation": "smooth"}
+        "tooltip": {
+          "mode": "single"
         }
       },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6}
-    },
-    {
-      "id": 20,
-      "title": "🌿 VCS Reference Analysis",
-      "type": "row",
-      "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 14}
-    },
-    {
-      "id": 21,
-      "title": "Lines Delta Over Time",
-      "type": "timeseries",
       "targets": [
         {
-          "expr": "github_actions_vcs_ref_lines_delta{vcs_repository_name=\"vanilla\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$step_status\"}[5m])))",
           "refId": "A",
-          "legendFormat": "Lines Delta ({{vcs_ref_type}})"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {"drawStyle": "bars", "fillOpacity": 80}
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 15}
-    },
-    {
-      "id": 22,
-      "title": "Revisions Delta",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "github_actions_vcs_ref_revisions_delta{vcs_repository_name=\"vanilla\"}",
-          "refId": "A",
-          "legendFormat": "Revisions Delta ({{vcs_ref_type}})"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {"drawStyle": "points", "pointSize": 5}
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 15}
-    },
-    {
-      "id": 30,
-      "title": "⚡ GitHub Actions Workflow Data",
-      "type": "row",
-      "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 23}
-    },
-    {
-      "id": 31,
-      "title": "GitHub Actions Calls Total",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "rate(github_actions_github_actions_calls_total[5m])",
-          "refId": "A",
-          "legendFormat": "Action Calls/sec"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 20}
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
-    },
-    {
-      "id": 32,
-      "title": "GitHub Actions Duration Distribution",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "rate(github_actions_github_actions_duration_milliseconds_sum[5m]) / rate(github_actions_github_actions_duration_milliseconds_count[5m])",
-          "refId": "A",
-          "legendFormat": "Avg Duration"
-        },
-        {
-          "expr": "histogram_quantile(0.50, rate(github_actions_github_actions_duration_milliseconds_bucket[5m]))",
-          "refId": "B",
           "legendFormat": "50th percentile"
         },
         {
-          "expr": "histogram_quantile(0.95, rate(github_actions_github_actions_duration_milliseconds_bucket[5m]))",
-          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$step_status\"}[5m])))",
+          "refId": "B",
           "legendFormat": "95th percentile"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "ms",
-          "custom": {"drawStyle": "line", "lineInterpolation": "smooth"}
-        }
-      },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
-    },
-    {
-      "id": 40,
-      "title": "🎯 Span Metrics (From Webhook Traces)",
-      "type": "row",
-      "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 32}
-    },
-    {
-      "id": 41,
-      "title": "Span Calls by Workflow Step",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "sum by (span_name) (rate(github_actions_traces_span_metrics_calls_total{service_name=\"github-actions\"}[5m]))",
-          "refId": "A",
-          "legendFormat": "{{span_name}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "stacking": {"mode": "normal"}}
-        }
-      },
-      "options": {
-        "legend": {"displayMode": "table", "placement": "bottom", "values": ["last", "max"]}
-      },
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 33}
-    },
-    {
-      "id": 42,
-      "title": "Span Duration by Step",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "sum by (span_name) (rate(github_actions_traces_span_metrics_duration_seconds_sum{service_name=\"github-actions\"}[5m])) / sum by (span_name) (rate(github_actions_traces_span_metrics_duration_seconds_count{service_name=\"github-actions\"}[5m]))",
-          "refId": "A",
-          "legendFormat": "{{span_name}} avg duration"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": {"drawStyle": "line", "lineInterpolation": "smooth"}
-        }
-      },
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 41}
-    },
-    {
-      "id": 50,
-      "title": "📋 Complete Data Inventory Table",
-      "type": "row",
-      "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 49}
-    },
-    {
-      "id": 51,
-      "title": "All VCS Change Data",
-      "type": "table",
-      "targets": [
-        {
-          "expr": "github_actions_vcs_change_count{vcs_repository_name=\"vanilla\"}",
-          "refId": "A",
-          "format": "table",
-          "instant": true
         },
         {
-          "expr": "github_actions_vcs_change_duration_seconds{vcs_repository_name=\"vanilla\"}",
-          "refId": "B",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "expr": "github_actions_vcs_change_time_to_approval_seconds{vcs_repository_name=\"vanilla\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$step_status\"}[5m])))",
           "refId": "C",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "expr": "github_actions_vcs_change_time_to_merge_seconds{vcs_repository_name=\"vanilla\"}",
-          "refId": "D",
-          "format": "table",
-          "instant": true
+          "legendFormat": "99th percentile"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {"align": "left", "filterable": true}
-        }
-      },
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 50}
-    },
-    {
-      "id": 52,
-      "title": "All VCS Ref Data",
-      "type": "table",
-      "targets": [
-        {
-          "expr": "github_actions_vcs_ref_count{vcs_repository_name=\"vanilla\"}",
-          "refId": "A",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "expr": "github_actions_vcs_ref_lines_delta{vcs_repository_name=\"vanilla\"}",
-          "refId": "B",
-          "format": "table",
-          "instant": true
-        },
-        {
-          "expr": "github_actions_vcs_ref_revisions_delta{vcs_repository_name=\"vanilla\"}",
-          "refId": "C",
-          "format": "table",
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {"align": "left", "filterable": true}
-        }
-      },
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 58}
+      "title": "Duration Percentiles",
+      "type": "timeseries"
     }
   ],
   "refresh": "10s",
-  "schemaVersion": 37,
-  "version": 1
+  "schemaVersion": 39,
+  "tags": [
+    "github-actions",
+    "observability",
+    "ci-cd"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total, service_name)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": "label_values(github_actions_traces_span_metrics_calls_total, service_name)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, workflow_step)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Workflow Step",
+        "multi": true,
+        "name": "workflow_step",
+        "options": [],
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, workflow_step)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Step Status",
+        "multi": true,
+        "name": "step_status",
+        "options": [],
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "GitHub Actions Complete Metrics - 2025 Edition",
+  "uid": "github-actions-complete-metrics",
+  "version": 1,
+  "weekStart": ""
 }

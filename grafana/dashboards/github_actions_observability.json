@@ -20,7 +20,11 @@
         {
           "expr": "sum(rate(github_actions_traces_span_metrics_calls_total[5m])) * 300",
           "refId": "A",
-          "legendFormat": "Calls/5min"
+          "legendFormat": "Calls/5min",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -45,8 +49,12 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total{status_code=\"STATUS_CODE_OK\"}[5m])) / sum(rate(github_actions_traces_span_metrics_calls_total[5m])) * 100",
-          "refId": "A"
+          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total{step_status=\"success\"}[5m])) / sum(rate(github_actions_traces_span_metrics_calls_total[5m])) * 100",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -58,9 +66,18 @@
           },
           "thresholds": {
             "steps": [
-              {"color": "red", "value": 0},
-              {"color": "yellow", "value": 80},
-              {"color": "green", "value": 95}
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
             ]
           }
         }
@@ -79,7 +96,11 @@
       "targets": [
         {
           "expr": "sum(rate(github_actions_traces_span_metrics_duration_seconds_sum[5m])) / sum(rate(github_actions_traces_span_metrics_duration_seconds_count[5m]))",
-          "refId": "A"
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -104,8 +125,12 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "count(count by (span_name) (github_actions_traces_span_metrics_calls_total))",
-          "refId": "A"
+          "expr": "count(count by (workflow_step) (github_actions_traces_span_metrics_calls_total))",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -132,17 +157,29 @@
         {
           "expr": "sum(rate(github_actions_traces_span_metrics_calls_total[5m]))",
           "refId": "A",
-          "legendFormat": "Total Rate"
+          "legendFormat": "Total Rate",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total{status_code=\"STATUS_CODE_OK\"}[5m]))",
+          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total{step_status=\"success\"}[5m]))",
           "refId": "B",
-          "legendFormat": "Success Rate"
+          "legendFormat": "Success Rate",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total{status_code!=\"STATUS_CODE_OK\"}[5m]))",
+          "expr": "sum(rate(github_actions_traces_span_metrics_calls_total{step_status!=\"success\"}[5m]))",
           "refId": "C",
-          "legendFormat": "Error Rate"
+          "legendFormat": "Error Rate",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "yAxes": [
@@ -166,7 +203,11 @@
         {
           "expr": "topk(10, sum by (service_name) (github_actions_traces_span_metrics_calls_total))",
           "refId": "A",
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -189,9 +230,13 @@
       "type": "table",
       "targets": [
         {
-          "expr": "topk(10, sum by (span_name) (github_actions_traces_span_metrics_calls_total))",
+          "expr": "topk(10, sum by (workflow_step) (github_actions_traces_span_metrics_calls_total))",
           "refId": "A",
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -216,22 +261,38 @@
         {
           "expr": "histogram_quantile(0.50, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])) by (le))",
           "refId": "A",
-          "legendFormat": "50th percentile"
+          "legendFormat": "50th percentile",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
           "expr": "histogram_quantile(0.90, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])) by (le))",
           "refId": "B",
-          "legendFormat": "90th percentile"
+          "legendFormat": "90th percentile",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
           "expr": "histogram_quantile(0.95, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])) by (le))",
           "refId": "C",
-          "legendFormat": "95th percentile"
+          "legendFormat": "95th percentile",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
           "expr": "histogram_quantile(0.99, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])) by (le))",
           "refId": "D",
-          "legendFormat": "99th percentile"
+          "legendFormat": "99th percentile",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "yAxes": [
@@ -253,9 +314,13 @@
       "type": "table",
       "targets": [
         {
-          "expr": "sum by (span_name) (github_actions_traces_span_metrics_calls_total)",
+          "expr": "sum by (workflow_step) (github_actions_traces_span_metrics_calls_total)",
           "refId": "A",
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -278,9 +343,13 @@
       "type": "table",
       "targets": [
         {
-          "expr": "sum by (status_code) (github_actions_traces_span_metrics_calls_total{status_code!=\"STATUS_CODE_OK\"})",
+          "expr": "sum by (step_status) (github_actions_traces_span_metrics_calls_total{step_status!=\"success\"})",
           "refId": "A",
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -302,5 +371,85 @@
     "from": "now-24h",
     "to": "now"
   },
-  "refresh": "10s"
+  "refresh": "10s",
+  "templating": {
+    "list": [
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total, service_name)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": "label_values(github_actions_traces_span_metrics_calls_total, service_name)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, workflow_step)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Workflow Step",
+        "multi": true,
+        "name": "workflow_step",
+        "options": [],
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, workflow_step)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Step Status",
+        "multi": true,
+        "name": "step_status",
+        "options": [],
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "schemaVersion": 39
 }

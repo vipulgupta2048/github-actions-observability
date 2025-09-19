@@ -481,5 +481,6 @@
         "label": "Workflow Step"
       }
     ]
-  }
+  },
+  "schemaVersion": 39
 }

@@ -953,6 +953,6 @@
     }
   ],
   "refresh": "10s",
-  "schemaVersion": 37,
+  "schemaVersion": 39,
   "version": 1
 }

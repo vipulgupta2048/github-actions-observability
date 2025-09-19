@@ -2,7 +2,13 @@
   "id": null,
   "uid": "gh-workflow-health",
   "title": "GitHub Actions - Workflow Health Overview",
-  "tags": ["github", "actions", "health", "overview", "ci/cd"],
+  "tags": [
+    "github",
+    "actions",
+    "health",
+    "overview",
+    "ci/cd"
+  ],
   "timezone": "browser",
   "editable": true,
   "graphTooltip": 1,
@@ -12,19 +18,48 @@
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"],
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
     "quick_ranges": [
-      {"display": "Last 24 hours", "from": "now-24h", "to": "now"},
-      {"display": "Last 7 days", "from": "now-24h", "to": "now"},
-      {"display": "Last 30 days", "from": "now-24h", "to": "now"}
+      {
+        "display": "Last 24 hours",
+        "from": "now-24h",
+        "to": "now"
+      },
+      {
+        "display": "Last 7 days",
+        "from": "now-24h",
+        "to": "now"
+      },
+      {
+        "display": "Last 30 days",
+        "from": "now-24h",
+        "to": "now"
+      }
     ]
   },
   "templating": {
     "list": [
       {
         "allValue": ".*",
-        "current": {"text": "All", "value": "$__all"},
-        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
         "definition": "label_values(github_actions_traces_span_metrics_calls_total, service_name)",
         "includeAll": true,
         "multi": true,
@@ -38,25 +73,43 @@
       },
       {
         "allValue": ".*",
-        "current": {"text": "All", "value": "$__all"},
-        "datasource": {"type": "prometheus", "uid": "prometheus"},
-        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, span_name)",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, workflow_step)",
         "includeAll": true,
         "multi": true,
         "name": "workflow_step",
         "options": [],
-        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, span_name)",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, workflow_step)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
         "type": "query"
       },
       {
-        "current": {"text": "7d", "value": "7d"},
+        "current": {
+          "text": "7d",
+          "value": "7d"
+        },
         "options": [
-          {"text": "1d", "value": "1d"},
-          {"text": "7d", "value": "7d"},
-          {"text": "30d", "value": "30d"}
+          {
+            "text": "1d",
+            "value": "1d"
+          },
+          {
+            "text": "7d",
+            "value": "7d"
+          },
+          {
+            "text": "30d",
+            "value": "30d"
+          }
         ],
         "name": "time_range",
         "type": "custom"
@@ -70,9 +123,13 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "100 * (sum(rate(github_actions_traces_span_metrics_calls_total{status_code=\"STATUS_CODE_OK\",service_name=~\"$service\",span_name=~\"$workflow_step\"}[1h])) by (span_name) / sum(rate(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\"}[1h])) by (span_name))",
+          "expr": "100 * (sum(rate(github_actions_traces_span_metrics_calls_total{step_status=\"success\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[1h])) by (workflow_step) / sum(rate(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[1h])) by (workflow_step))",
           "refId": "A",
-          "legendFormat": "{{span_name}}"
+          "legendFormat": "{{workflow_step}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -82,9 +139,18 @@
           "max": 100,
           "thresholds": {
             "steps": [
-              {"color": "red", "value": 0},
-              {"color": "yellow", "value": 80},
-              {"color": "green", "value": 95}
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
             ]
           },
           "custom": {
@@ -98,10 +164,18 @@
         "legend": {
           "displayMode": "table",
           "placement": "right",
-          "values": ["last", "mean"]
+          "values": [
+            "last",
+            "mean"
+          ]
         }
       },
-      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 0}
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
     },
     {
       "id": 2,
@@ -109,56 +183,120 @@
       "type": "table",
       "targets": [
         {
-          "expr": "topk(10, sum by (span_name, service_name) (github_actions_traces_span_metrics_calls_total{status_code!=\"STATUS_CODE_OK\",service_name=~\"$service\",span_name=~\"$workflow_step\"}))",
+          "expr": "topk(10, sum by (workflow_step, service_name) (github_actions_traces_span_metrics_calls_total{step_status!=\"success\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}))",
           "refId": "A",
           "format": "table",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "100 * (1 - (sum by (span_name, service_name) (github_actions_traces_span_metrics_calls_total{status_code=\"STATUS_CODE_OK\",service_name=~\"$service\",span_name=~\"$workflow_step\"}) / sum by (span_name, service_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\"})))",
+          "expr": "100 * (1 - (sum by (workflow_step, service_name) (github_actions_traces_span_metrics_calls_total{step_status=\"success\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}) / sum by (workflow_step, service_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})))",
           "refId": "B",
           "format": "table",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": {"align": "left"}
+          "custom": {
+            "align": "left"
+          }
         },
         "overrides": [
           {
-            "matcher": {"id": "byName", "options": "span_name"},
-            "properties": [{"id": "displayName", "value": "Workflow Step"}]
-          },
-          {
-            "matcher": {"id": "byName", "options": "service_name"},
-            "properties": [{"id": "displayName", "value": "Repository"}]
-          },
-          {
-            "matcher": {"id": "byRegexp", "options": "Value #A"},
+            "matcher": {
+              "id": "byName",
+              "options": "workflow_step"
+            },
             "properties": [
-              {"id": "displayName", "value": "Failure Count"},
-              {"id": "custom.displayMode", "value": "color-background"}
+              {
+                "id": "displayName",
+                "value": "Workflow Step"
+              }
             ]
           },
           {
-            "matcher": {"id": "byRegexp", "options": "Value #B"},
+            "matcher": {
+              "id": "byName",
+              "options": "service_name"
+            },
             "properties": [
-              {"id": "displayName", "value": "Failure Rate %"},
-              {"id": "unit", "value": "percent"},
-              {"id": "custom.displayMode", "value": "color-background"},
-              {"id": "thresholds", "value": {
-                "steps": [
-                  {"color": "green", "value": 0},
-                  {"color": "yellow", "value": 5},
-                  {"color": "red", "value": 20}
-                ]
-              }}
+              {
+                "id": "displayName",
+                "value": "Repository"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "Value #A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Failure Count"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "Value #B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Failure Rate %"
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 5
+                    },
+                    {
+                      "color": "red",
+                      "value": 20
+                    }
+                  ]
+                }
+              }
             ]
           }
         ]
       },
-      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 9}
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      }
     },
     {
       "id": 3,
@@ -166,19 +304,31 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",span_name=~\"$workflow_step\"}[5m])) by (le, span_name))",
+          "expr": "histogram_quantile(0.50, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])) by (le, workflow_step))",
           "refId": "A",
-          "legendFormat": "P50 - {{span_name}}"
+          "legendFormat": "P50 - {{workflow_step}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",span_name=~\"$workflow_step\"}[5m])) by (le, span_name))",
+          "expr": "histogram_quantile(0.95, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])) by (le, workflow_step))",
           "refId": "B",
-          "legendFormat": "P95 - {{span_name}}"
+          "legendFormat": "P95 - {{workflow_step}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "histogram_quantile(0.99, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",span_name=~\"$workflow_step\"}[5m])) by (le, span_name))",
+          "expr": "histogram_quantile(0.99, sum(rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])) by (le, workflow_step))",
           "refId": "C",
-          "legendFormat": "P99 - {{span_name}}"
+          "legendFormat": "P99 - {{workflow_step}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -193,10 +343,26 @@
       "alert": {
         "conditions": [
           {
-            "evaluator": {"params": [600], "type": "gt"},
-            "operator": {"type": "and"},
-            "query": {"params": ["C", "5m", "now"]},
-            "reducer": {"params": [], "type": "avg"},
+            "evaluator": {
+              "params": [
+                600
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "C",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "avg"
+            },
             "type": "query"
           }
         ],
@@ -208,7 +374,12 @@
         "noDataState": "no_data",
         "notifications": []
       },
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 9}
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      }
     },
     {
       "id": 4,
@@ -216,14 +387,22 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(rate(github_actions_traces_span_metrics_duration_seconds_sum{span_name=~\".*queue.*|.*waiting.*\",service_name=~\"$service\",span_name=~\"$workflow_step\"}[5m])) by (span_name) / sum(rate(github_actions_traces_span_metrics_duration_seconds_count{span_name=~\".*queue.*|.*waiting.*\",service_name=~\"$service\",span_name=~\"$workflow_step\"}[5m])) by (span_name)",
+          "expr": "sum(rate(github_actions_traces_span_metrics_duration_seconds_sum{workflow_step=~\".*queue.*|.*waiting.*\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])) by (workflow_step) / sum(rate(github_actions_traces_span_metrics_duration_seconds_count{workflow_step=~\".*queue.*|.*waiting.*\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])) by (workflow_step)",
           "refId": "A",
-          "legendFormat": "Queue Time - {{span_name}}"
+          "legendFormat": "Queue Time - {{workflow_step}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "sum(rate(github_actions_traces_span_metrics_duration_seconds_sum{span_name!~\".*queue.*|.*waiting.*\",service_name=~\"$service\",span_name=~\"$workflow_step\"}[5m])) by (span_name) / sum(rate(github_actions_traces_span_metrics_duration_seconds_count{span_name!~\".*queue.*|.*waiting.*\",service_name=~\"$service\",span_name=~\"$workflow_step\"}[5m])) by (span_name)",
+          "expr": "sum(rate(github_actions_traces_span_metrics_duration_seconds_sum{workflow_step!~\".*queue.*|.*waiting.*\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])) by (workflow_step) / sum(rate(github_actions_traces_span_metrics_duration_seconds_count{workflow_step!~\".*queue.*|.*waiting.*\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])) by (workflow_step)",
           "refId": "B",
-          "legendFormat": "Execution Time - {{span_name}}"
+          "legendFormat": "Execution Time - {{workflow_step}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -232,11 +411,18 @@
           "custom": {
             "drawStyle": "line",
             "fillOpacity": 20,
-            "stacking": {"mode": "normal"}
+            "stacking": {
+              "mode": "normal"
+            }
           }
         }
       },
-      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 18}
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      }
     },
     {
       "id": 5,
@@ -244,9 +430,13 @@
       "type": "barchart",
       "targets": [
         {
-          "expr": "100 * (sum by (service_name) (github_actions_traces_span_metrics_calls_total{status_code=\"STATUS_CODE_OK\",service_name=~\"$service\"}) / sum by (service_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}))",
+          "expr": "100 * (sum by (service_name) (github_actions_traces_span_metrics_calls_total{step_status=\"success\",service_name=~\"$service\"}) / sum by (service_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}))",
           "refId": "A",
-          "legendFormat": "{{service_name}}"
+          "legendFormat": "{{service_name}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -256,9 +446,18 @@
           "max": 100,
           "thresholds": {
             "steps": [
-              {"color": "red", "value": 0},
-              {"color": "yellow", "value": 80},
-              {"color": "green", "value": 95}
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
             ]
           },
           "custom": {
@@ -272,9 +471,16 @@
       },
       "options": {
         "orientation": "horizontal",
-        "legend": {"displayMode": "hidden"}
+        "legend": {
+          "displayMode": "hidden"
+        }
       },
-      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 27}
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      }
     },
     {
       "id": 6,
@@ -282,14 +488,22 @@
       "type": "heatmap",
       "targets": [
         {
-          "expr": "sum by (span_name) (increase(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\"}[1h]))",
-          "refId": "A"
+          "expr": "sum by (workflow_step) (increase(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[1h]))",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "hideFrom": {"legend": false, "tooltip": false, "vis": false}
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            }
           }
         }
       },
@@ -306,14 +520,34 @@
           "scheme": "Oranges",
           "steps": 64
         },
-        "exemplars": {"color": "rgba(255,0,255,0.7)"},
-        "filterValues": {"le": 1e-9},
-        "legend": {"show": true},
-        "rowsFrame": {"layout": "auto"},
-        "tooltip": {"show": true, "yHistogram": false},
-        "yAxis": {"axisPlacement": "left", "reverse": false, "unit": "short"}
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-09
+        },
+        "legend": {
+          "show": true
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "tooltip": {
+          "show": true,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "short"
+        }
       },
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 27}
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      }
     }
   ],
   "links": [
@@ -322,7 +556,10 @@
       "icon": "external link",
       "includeVars": true,
       "keepTime": true,
-      "tags": ["github", "exploration"],
+      "tags": [
+        "github",
+        "exploration"
+      ],
       "targetBlank": true,
       "title": "Explore Workflows",
       "tooltip": "Open exploration dashboard",
@@ -331,6 +568,6 @@
     }
   ],
   "refresh": "30s",
-  "schemaVersion": 37,
+  "schemaVersion": 39,
   "version": 1
 }
