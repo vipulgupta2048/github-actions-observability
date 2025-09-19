@@ -3,6 +3,7 @@
 .env.*.local
 tunnel.log
 tunnel.lo
+past-decisions/
 
 # Secrets and sensitive files
 *.pem
