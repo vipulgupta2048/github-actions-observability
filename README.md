@@ -1,6 +1,6 @@
 # GitHub Actions Observability with OpenTelemetry
 
-Complete observability solution for GitHub Actions workflows using OpenTelemetry Collector, Prometheus, and Grafana. Monitor your CI/CD pipelines with distributed tracing, rich metrics, and real-time dashboards.
+        D2[Workflow Health<br/>💚 Monitoring]omplete observability solution for GitHub Actions workflows using OpenTelemetry Collector, Prometheus, and Grafana. Monitor your CI/CD pipelines with distributed tracing, rich metrics, and real-time dashboards.
 
 ## 🎯 What You Get
 
@@ -68,7 +68,7 @@ graph LR
     
     class GH,WH github
     class CF tunnel
-    class GHR,RP,AP,BP,SMP,PE,AUTH,GHS,VCS collector  
+    class GHR,RP,AP,BP,SMP,PE,AUTH,GHS,VCS collector
     class PROM storage
     class D1,D2,D3,D4 dashboard
     class USER user
