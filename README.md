@@ -1,6 +1,72 @@
 # GitHub Actions Observability with OpenTelemetry
 
-        D2[Workflow Health<br/>💚 Monitoring]omplete observability solution for GitHub Actions workflows using OpenTelemetry Collector, Prometheus, and Grafana. Monitor your CI/CD pipelines with distributed tracing, rich metrics, and real-time dashboards.
+        ```mermaid
+flowchart TD
+    %% GitHub Source
+    GH["🏠 GitHub Repository<br/><b>Actions Triggered</b>"]
+    
+    %% Webhook Flow
+    GH -->|"workflow_run<br/>workflow_job events"| WH["📡 GitHub Webhook<br/><b>POST /events</b>"]
+    WH -->|"HTTPS POST<br/>JSON payload"| CF["🔒 Cloudflare Tunnel<br/><b>Secure Proxy</b>"]
+    
+    %% Collector Entry Point
+    CF -->|"Forward to<br/>localhost:9504"| COLLECTOR
+    
+    %% Main Processing Engine
+    subgraph COLLECTOR ["🔄 OpenTelemetry Collector"]
+        direction LR
+        GHR["🎯 GitHub Receiver<br/>Port 9504"] 
+        PIPELINE["⚙️ Processing Pipeline<br/>Resource → Attributes → Batch → Span Metrics"]
+        PE["📈 Prometheus Exporter<br/>Port 9464"]
+        
+        GHR --> PIPELINE --> PE
+    end
+    
+    %% Parallel API Data Source
+    subgraph API ["🌐 GitHub API Scraping"]
+        direction TB
+        AUTH["🔐 Bearer Token Auth<br/>GitHub PAT"]
+        SCRAPER["🔍 GitHub Scraper<br/>REST/GraphQL API"]
+        VCS["� VCS Metrics<br/>Repos • PRs • Changes"]
+        
+        AUTH --> SCRAPER --> VCS
+    end
+    
+    %% Connect API to Collector
+    VCS -.->|"Additional<br/>metrics"| PE
+    
+    %% Data Storage
+    PE -->|"Scrape metrics<br/>:9464/metrics"| PROM["⚡ Prometheus<br/><b>Time-Series Database</b><br/>30-day retention"]
+    
+    %% Visualization Layer
+    PROM -->|"PromQL<br/>queries"| GRAFANA
+    
+    subgraph GRAFANA ["📈 Grafana Dashboards"]
+        direction LR
+        D1["📊 Overview &<br/>Observability"]
+        D2["💚 Workflow<br/>Health"]
+        D3["📋 Complete<br/>Metrics"]
+        D4["🏆 Repository<br/>Performance"]
+    end
+    
+    %% User Access
+    USER["👤 User Browser<br/><b>localhost:3000</b>"] --> GRAFANA
+    
+    %% Enhanced Styling
+    classDef source fill:#24292e,stroke:#f9826c,stroke-width:3px,color:#fff
+    classDef webhook fill:#f38020,stroke:#fff,stroke-width:2px,color:#fff
+    classDef collector fill:#326ce5,stroke:#fff,stroke-width:2px,color:#fff
+    classDef storage fill:#e6522c,stroke:#fff,stroke-width:2px,color:#fff
+    classDef dashboard fill:#f46800,stroke:#fff,stroke-width:2px,color:#fff
+    classDef user fill:#00d924,stroke:#fff,stroke-width:3px,color:#fff
+    
+    class GH source
+    class WH,CF webhook
+    class GHR,PIPELINE,PE,AUTH,SCRAPER,VCS collector
+    class PROM storage
+    class D1,D2,D3,D4 dashboard
+    class USER user
+```omplete observability solution for GitHub Actions workflows using OpenTelemetry Collector, Prometheus, and Grafana. Monitor your CI/CD pipelines with distributed tracing, rich metrics, and real-time dashboards.
 
 ## 🎯 What You Get
 
