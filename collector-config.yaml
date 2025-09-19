@@ -7,7 +7,7 @@ receivers:
       path: "/events"
       health_path: "/health"
       secret: ${GITHUB_WEBHOOK_SECRET}
-      service_name: "github-actions"
+      service_name: "gh"
     scrapers:
       scraper:
         github_org: ${GITHUB_ORG}
@@ -38,15 +38,13 @@ processors:
         value: "production"
         action: upsert
 
-  # Map to custom dimension names to avoid conflicts
-  attributes:
-    actions:
-      - key: workflow_step
-        from_attribute: span.name
-        action: upsert
-      - key: step_status
-        from_attribute: status.code
-        action: upsert
+  # Transform processor handles both attribute mapping and status code conversion
+  transform:
+    trace_statements:
+      - set(span.attributes["workflow_step"], span.name) where span.name != nil
+      - set(span.attributes["step_status"], "success") where span.status.code == STATUS_CODE_OK
+      - set(span.attributes["step_status"], "error") where span.status.code == STATUS_CODE_ERROR 
+      - set(span.attributes["step_status"], "unset") where span.status.code == STATUS_CODE_UNSET
 
 exporters:
   # Export metrics to Prometheus scrape endpoint
@@ -92,7 +90,7 @@ service:
     # Traces pipeline for GitHub Actions workflow spans
     traces:
       receivers: [github]
-      processors: [resource, attributes, batch]
+      processors: [resource, transform, batch]
       exporters: [debug, spanmetrics]
     
     # Metrics pipeline for GitHub Actions metrics (includes span-derived metrics)
