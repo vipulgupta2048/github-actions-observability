@@ -10,8 +10,8 @@ receivers:
       service_name: "github-actions"
     scrapers:
       scraper:
-        github_org: ${GITHUB_ORG:-your_github_org}
-        search_query: "repo:${GITHUB_ORG:-your_github_org}/${GITHUB_REPO:-your_repo}"
+        github_org: ${GITHUB_ORG}
+        search_query: "repo:${GITHUB_ORG}/${GITHUB_REPO}"
         auth:
           authenticator: bearertokenauth
 

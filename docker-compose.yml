@@ -4,6 +4,8 @@ services:
     environment:
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET}
+      GITHUB_ORG: ${GITHUB_ORG}
+      GITHUB_REPO: ${GITHUB_REPO}
     command: ["--config", "/etc/otel/collector-config.yaml"]
     volumes:
       - ./collector-config.yaml:/etc/otel/collector-config.yaml
