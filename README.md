@@ -1,6 +1,20 @@
 # GitHub Actions Observability with OpenTelemetry
 
-        ```mermaid
+Complete observability solution for GitHub Actions workflows using OpenTelemetry Collector, Prometheus, and Grafana. Monitor your CI/CD pipelines with distributed tracing, rich metrics, and real-time dashboards.
+
+## 🎯 What You Get
+
+- **📊 Complete Metrics**: Workflow execution rates, durations, success/failure rates
+- **🔍 Distributed Traces**: Every workflow run as a detailed trace with job and step spans  
+- **📈 Rich Dashboards**: 6 pre-built Grafana dashboards for different analysis needs
+- **⚡ Real-time Data**: Live updates via GitHub webhooks with <15s latency
+- **🔄 VCS Insights**: Pull request metrics, code change analysis, merge times
+- **❌ Failure Analysis**: Identify problematic workflows, steps, and patterns
+
+
+## Architecture
+
+```mermaid
 flowchart TD
     %% GitHub Source
     GH["🏠 GitHub Repository<br/><b>Actions Triggered</b>"]
@@ -27,7 +41,7 @@ flowchart TD
         direction TB
         AUTH["🔐 Bearer Token Auth<br/>GitHub PAT"]
         SCRAPER["🔍 GitHub Scraper<br/>REST/GraphQL API"]
-        VCS["� VCS Metrics<br/>Repos • PRs • Changes"]
+        VCS["📊 VCS Metrics<br/>Repos • PRs • Changes"]
         
         AUTH --> SCRAPER --> VCS
     end
@@ -66,80 +80,7 @@ flowchart TD
     class PROM storage
     class D1,D2,D3,D4 dashboard
     class USER user
-```omplete observability solution for GitHub Actions workflows using OpenTelemetry Collector, Prometheus, and Grafana. Monitor your CI/CD pipelines with distributed tracing, rich metrics, and real-time dashboards.
-
-## 🎯 What You Get
-
-- **📊 Complete Metrics**: Workflow execution rates, durations, success/failure rates
-- **🔍 Distributed Traces**: Every workflow run as a detailed trace with job and step spans  
-- **📈 Rich Dashboards**: 6 pre-built Grafana dashboards for different analysis needs
-- **⚡ Real-time Data**: Live updates via GitHub webhooks with <15s latency
-- **� VCS Insights**: Pull request metrics, code change analysis, merge times
-- **❌ Failure Analysis**: Identify problematic workflows, steps, and patterns
-
-## Architecture
-
-```mermaid
-graph LR
-    %% Source
-    GH[GitHub Repository<br/>🏠 Actions Triggered]
-    
-    %% Webhook Path (Horizontal)
-    GH -->|"workflow_run<br/>workflow_job events"| WH[GitHub Webhook<br/>📡 POST /events]
-    WH -->|"HTTPS POST"| CF[Cloudflare Tunnel<br/>🔒 Secure Proxy]
-    CF -->|"localhost:9504"| GHR[GitHub Receiver<br/>🎯 Webhook Handler]
-    
-    %% Collector Processing Pipeline (Horizontal with vertical internals)
-    subgraph COLLECTOR ["OpenTelemetry Collector 🔄"]
-        direction TB
-        GHR --> RP[Resource Processor<br/>🏷️ Metadata]
-        RP --> AP[Attributes Processor<br/>🔧 Transform]
-        AP --> BP[Batch Processor<br/>📦 Buffer]
-        BP --> SMP[Span Metrics<br/>📊 RED Metrics]
-        SMP --> PE[Prometheus Exporter<br/>📈 :9464]
-    end
-    
-    %% Parallel API Scraping (Vertical compact)
-    subgraph API ["GitHub API Scraping 🌐"]
-        direction TB
-        AUTH[Bearer Token Auth<br/>🔐 GitHub PAT] 
-        AUTH --> GHS[GitHub Scraper<br/>🔍 REST API]
-        GHS --> VCS[VCS Metrics<br/>📊 Repos, PRs]
-    end
-    
-    %% Storage
-    PE -->|"Scrape :9464/metrics"| PROM[Prometheus<br/>⚡ 30-day Storage]
-    VCS -.->|"Additional metrics"| PE
-    
-    %% Visualization Layer
-    subgraph DASHBOARDS ["Grafana Dashboards 📈"]
-        direction TB
-        D1[Overview & Observability<br/>📊 Executive KPIs]
-        D2[Workflow Health<br/>� Monitoring] 
-        D3[Complete Metrics<br/>📋 All Data Points]
-        D4[Repository Performance<br/>🏆 Strategic Metrics]
-    end
-    
-    %% Final connections
-    PROM <-->|"PromQL queries"| DASHBOARDS
-    USER[User Browser<br/>👤 :3000] --> DASHBOARDS
-    
-    %% Styling
-    classDef github fill:#24292e,stroke:#f9826c,stroke-width:2px,color:#fff
-    classDef tunnel fill:#f38020,stroke:#fff,stroke-width:2px,color:#fff  
-    classDef collector fill:#326ce5,stroke:#fff,stroke-width:2px,color:#fff
-    classDef storage fill:#e6522c,stroke:#fff,stroke-width:2px,color:#fff
-    classDef dashboard fill:#f46800,stroke:#fff,stroke-width:2px,color:#fff
-    classDef user fill:#00d924,stroke:#fff,stroke-width:2px,color:#fff
-    
-    class GH,WH github
-    class CF tunnel
-    class GHR,RP,AP,BP,SMP,PE,AUTH,GHS,VCS collector
-    class PROM storage
-    class D1,D2,D3,D4 dashboard
-    class USER user
 ```
-
 ## 📋 Prerequisites
 
 ### Required Software
