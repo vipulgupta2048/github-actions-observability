@@ -2,38 +2,80 @@
   "id": null,
   "uid": "gh-workflow-exploration",
   "title": "GitHub Actions - Workflow Exploration",
-  "tags": ["github", "actions", "exploration", "detailed", "drill-down"],
+  "tags": [
+    "github",
+    "actions",
+    "exploration",
+    "detailed",
+    "drill-down"
+  ],
   "timezone": "browser",
   "editable": true,
   "graphTooltip": 1,
-  "description": "Detailed exploration dashboard for GitHub Actions with multi-filter interface, searchable workflow runs, and drill-down capabilities",
+  "description": "Complete GitHub Actions observability dashboard with Sentry-style workflow trace visualization, showing end-to-end execution flow, timing, and status for each workflow step",
   "time": {
     "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"],
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
     "quick_ranges": [
-      {"display": "Last hour", "from": "now-24h", "to": "now"},
-      {"display": "Last 24 hours", "from": "now-24h", "to": "now"},
-      {"display": "Last 7 days", "from": "now-24h", "to": "now"}
+      {
+        "display": "Last hour",
+        "from": "now-24h",
+        "to": "now"
+      },
+      {
+        "display": "Last 24 hours",
+        "from": "now-24h",
+        "to": "now"
+      },
+      {
+        "display": "Last 7 days",
+        "from": "now-24h",
+        "to": "now"
+      }
     ]
   },
   "templating": {
     "list": [
       {
         "allValue": ".*",
-        "current": {"text": "github-actions", "value": "github-actions"},
-        "datasource": {"type": "prometheus", "uid": "prometheus"},
-        "definition": "label_values(github_actions_traces_span_metrics_calls_total, service_name)",
+        "current": {
+          "text": "github-actions",
+          "value": "github-actions"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_calls_total, service_name)",
         "includeAll": true,
         "multi": true,
         "name": "service",
         "options": [
-          {"text": "All", "value": "$__all"},
-          {"text": "github-actions", "value": "github-actions", "selected": true}
+          {
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "text": "github-actions",
+            "value": "github-actions",
+            "selected": true
+          }
         ],
-        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=\"github-actions\"}, service_name)",
+        "query": "label_values(github_actions_calls_total{service_name=\"github-actions\"}, service_name)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -42,16 +84,26 @@
       },
       {
         "allValue": ".*",
-        "current": {"text": "All", "value": "$__all"},
-        "datasource": {"type": "prometheus", "uid": "prometheus"},
-        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, span_name)",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_calls_total{service_name=~\"$service\"}, workflow_step)",
         "includeAll": true,
         "multi": true,
         "name": "workflow_step",
         "options": [
-          {"text": "All", "value": "$__all", "selected": true}
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          }
         ],
-        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=\"github-actions\"}, span_name)",
+        "query": "label_values(github_actions_calls_total{service_name=\"github-actions\"}, workflow_step)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -60,14 +112,20 @@
       },
       {
         "allValue": ".*",
-        "current": {"text": "All", "value": "$__all"},
-        "datasource": {"type": "prometheus", "uid": "prometheus"},
-        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\"}, status_code)",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
         "includeAll": true,
         "multi": true,
         "name": "status",
         "options": [],
-        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\"}, status_code)",
+        "query": "label_values(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -75,19 +133,37 @@
         "label": "Status"
       },
       {
-        "current": {"text": "1h", "value": "1h"},
+        "current": {
+          "text": "1h",
+          "value": "1h"
+        },
         "options": [
-          {"text": "15m", "value": "15m"},
-          {"text": "1h", "value": "1h"},
-          {"text": "6h", "value": "6h"},
-          {"text": "24h", "value": "24h"}
+          {
+            "text": "15m",
+            "value": "15m"
+          },
+          {
+            "text": "1h",
+            "value": "1h"
+          },
+          {
+            "text": "6h",
+            "value": "6h"
+          },
+          {
+            "text": "24h",
+            "value": "24h"
+          }
         ],
         "name": "time_window",
         "type": "custom",
         "label": "Time Window"
       },
       {
-        "current": {"text": "", "value": ""},
+        "current": {
+          "text": "",
+          "value": ""
+        },
         "name": "search_filter",
         "type": "textbox",
         "label": "Search Filter"
@@ -101,39 +177,70 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "count(count by (service_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}))",
+          "expr": "count(count by (service_name) (github_actions_calls_total{service_name=~\"$service\"}))",
           "refId": "A"
         },
         {
-          "expr": "count(count by (span_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\"}))",
+          "expr": "count(count by (workflow_step) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}))",
           "refId": "B"
         },
         {
-          "expr": "sum(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\",status_code=~\"$status\"})",
+          "expr": "sum(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
           "refId": "C"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "custom": {"displayMode": "basic"}
+          "custom": {
+            "displayMode": "basic"
+          }
         },
         "overrides": [
           {
-            "matcher": {"id": "byFrameRefID", "options": "A"},
-            "properties": [{"id": "displayName", "value": "Repositories"}]
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Repositories"
+              }
+            ]
           },
           {
-            "matcher": {"id": "byFrameRefID", "options": "B"},
-            "properties": [{"id": "displayName", "value": "Workflows"}]
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Workflows"
+              }
+            ]
           },
           {
-            "matcher": {"id": "byFrameRefID", "options": "C"},
-            "properties": [{"id": "displayName", "value": "Total Runs"}]
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total Runs"
+              }
+            ]
           }
         ]
       },
-      "gridPos": {"h": 4, "w": 24, "x": 0, "y": 0}
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
     },
     {
       "id": 2,
@@ -141,13 +248,13 @@
       "type": "table",
       "targets": [
         {
-          "expr": "sort_desc(sum by (service_name, span_name, status_code, span_kind) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\",status_code=~\"$status\"}))",
+          "expr": "sort_desc(sum by (service_name, workflow_step, step_status, span_kind) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}))",
           "refId": "A",
           "format": "table",
           "instant": true
         },
         {
-          "expr": "sum by (service_name, span_name, status_code) (github_actions_traces_span_metrics_duration_seconds_sum{service_name=~\"$service\",span_name=~\"$workflow_step\",status_code=~\"$status\"}) / sum by (service_name, span_name, status_code) (github_actions_traces_span_metrics_duration_seconds_count{service_name=~\"$service\",span_name=~\"$workflow_step\",status_code=~\"$status\"})",
+          "expr": "sum by (service_name, workflow_step, step_status) (github_actions_duration_seconds_sum{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}) / sum by (service_name, workflow_step, step_status) (github_actions_duration_seconds_count{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
           "refId": "B",
           "format": "table",
           "instant": true
@@ -162,73 +269,178 @@
         },
         "overrides": [
           {
-            "matcher": {"id": "byName", "options": "service_name"},
+            "matcher": {
+              "id": "byName",
+              "options": "service_name"
+            },
             "properties": [
-              {"id": "displayName", "value": "Service"},
-              {"id": "custom.width", "value": 120}
+              {
+                "id": "displayName",
+                "value": "Service"
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "span_name"},
+            "matcher": {
+              "id": "byName",
+              "options": "workflow_step"
+            },
             "properties": [
-              {"id": "displayName", "value": "Workflow"},
-              {"id": "custom.width", "value": 150}
+              {
+                "id": "displayName",
+                "value": "Workflow"
+              },
+              {
+                "id": "custom.width",
+                "value": 150
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "vcs_ref_head"},
+            "matcher": {
+              "id": "byName",
+              "options": "vcs_ref_head"
+            },
             "properties": [
-              {"id": "displayName", "value": "Branch"},
-              {"id": "custom.width", "value": 100}
+              {
+                "id": "displayName",
+                "value": "Branch"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "cicd_pipeline_task_run_sender_login"},
+            "matcher": {
+              "id": "byName",
+              "options": "cicd_pipeline_task_run_sender_login"
+            },
             "properties": [
-              {"id": "displayName", "value": "Actor"},
-              {"id": "custom.width", "value": 100}
+              {
+                "id": "displayName",
+                "value": "Actor"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "cicd_pipeline_task_run_id"},
+            "matcher": {
+              "id": "byName",
+              "options": "cicd_pipeline_task_run_id"
+            },
             "properties": [
-              {"id": "displayName", "value": "Run ID"},
-              {"id": "custom.width", "value": 120},
-              {"id": "links", "value": [
-                {
-                  "targetBlank": true,
-                  "title": "View Trace Details",
-                  "url": "/d/gh-workflow-traces?var-run_id=${__value.raw}&${__url_time_range}"
-                }
-              ]}
+              {
+                "id": "displayName",
+                "value": "Run ID"
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "View Trace Details",
+                    "url": "/d/gh-workflow-traces?var-run_id=${__value.raw}&${__url_time_range}"
+                  }
+                ]
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "vcs_ref_head_revision"},
+            "matcher": {
+              "id": "byName",
+              "options": "vcs_ref_head_revision"
+            },
             "properties": [
-              {"id": "displayName", "value": "Commit SHA"},
-              {"id": "custom.width", "value": 120},
-              {"id": "custom.displayMode", "value": "color-text"}
+              {
+                "id": "displayName",
+                "value": "Commit SHA"
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-text"
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "status_code"},
+            "matcher": {
+              "id": "byName",
+              "options": "step_status"
+            },
             "properties": [
-              {"id": "displayName", "value": "Status"},
-              {"id": "custom.width", "value": 80},
-              {"id": "custom.displayMode", "value": "color-background"},
-              {"id": "mappings", "value": [
-                {"options": {"STATUS_CODE_OK": {"color": "green", "index": 0, "text": "Success"}}, "type": "value"},
-                {"options": {"STATUS_CODE_ERROR": {"color": "red", "index": 1, "text": "Failed"}}, "type": "value"}
-              ]}
+              {
+                "id": "displayName",
+                "value": "Status"
+              },
+              {
+                "id": "custom.width",
+                "value": 80
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "success": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "Success"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "failure": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "Failed"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
             ]
           },
           {
-            "matcher": {"id": "byRegexp", "options": "Value #B"},
+            "matcher": {
+              "id": "byRegexp",
+              "options": "Value #B"
+            },
             "properties": [
-              {"id": "displayName", "value": "Duration"},
-              {"id": "unit", "value": "s"},
-              {"id": "custom.width", "value": 80}
+              {
+                "id": "displayName",
+                "value": "Duration"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.width",
+                "value": 80
+              }
             ]
           }
         ]
@@ -238,12 +450,23 @@
           "id": "filterFieldsByName",
           "options": {
             "include": {
-              "names": ["service_name", "span_name", "status_code", "span_kind", "Value #B"]
+              "names": [
+                "service_name",
+                "workflow_step",
+                "step_status",
+                "span_kind",
+                "Value #B"
+              ]
             }
           }
         }
       ],
-      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 4}
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      }
     },
     {
       "id": 3,
@@ -251,9 +474,9 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum by (span_name, status_code) (rate(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\",status_code=~\"$status\"}[5m]))",
+          "expr": "sum by (workflow_step, step_status) (rate(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}[5m]))",
           "refId": "A",
-          "legendFormat": "{{span_name}} - {{status_code}}"
+          "legendFormat": "{{workflow_step}} - {{step_status}}"
         }
       ],
       "fieldConfig": {
@@ -263,7 +486,9 @@
             "drawStyle": "line",
             "lineInterpolation": "smooth",
             "fillOpacity": 20,
-            "stacking": {"mode": "normal"}
+            "stacking": {
+              "mode": "normal"
+            }
           }
         }
       },
@@ -271,10 +496,18 @@
         "legend": {
           "displayMode": "table",
           "placement": "bottom",
-          "values": ["last", "max"]
+          "values": [
+            "last",
+            "max"
+          ]
         }
       },
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16}
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      }
     },
     {
       "id": 4,
@@ -282,7 +515,7 @@
       "type": "table",
       "targets": [
         {
-          "expr": "topk(20, sum by (status_code, span_name, service_name) (github_actions_traces_span_metrics_calls_total{status_code!=\"STATUS_CODE_OK\",service_name=~\"$service\",span_name=~\"$workflow_step\"}))",
+          "expr": "topk(20, sum by (step_status, workflow_step, service_name) (github_actions_calls_total{step_status!=\"success\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}))",
           "refId": "A",
           "format": "table",
           "instant": true
@@ -297,30 +530,69 @@
         },
         "overrides": [
           {
-            "matcher": {"id": "byName", "options": "status_code"},
+            "matcher": {
+              "id": "byName",
+              "options": "step_status"
+            },
             "properties": [
-              {"id": "displayName", "value": "Error Type"},
-              {"id": "custom.displayMode", "value": "color-background"}
+              {
+                "id": "displayName",
+                "value": "Error Type"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "span_name"},
-            "properties": [{"id": "displayName", "value": "Step/Component"}]
-          },
-          {
-            "matcher": {"id": "byName", "options": "span_name"},
-            "properties": [{"id": "displayName", "value": "Workflow"}]
-          },
-          {
-            "matcher": {"id": "byName", "options": "Value"},
+            "matcher": {
+              "id": "byName",
+              "options": "workflow_step"
+            },
             "properties": [
-              {"id": "displayName", "value": "Error Count"},
-              {"id": "custom.displayMode", "value": "gradient-gauge"}
+              {
+                "id": "displayName",
+                "value": "Step/Component"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "workflow_step"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Workflow"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Error Count"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "gradient-gauge"
+              }
             ]
           }
         ]
       },
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      }
     },
     {
       "id": 5,
@@ -328,7 +600,7 @@
       "type": "table",
       "targets": [
         {
-          "expr": "sum by (service_name, span_name, status_code, span_kind) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",span_name=~\"$workflow_step\",status_code=~\"$status\"})",
+          "expr": "sum by (service_name, workflow_step, step_status, span_kind) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
           "refId": "A",
           "format": "table",
           "instant": true
@@ -343,41 +615,269 @@
         },
         "overrides": [
           {
-            "matcher": {"id": "byName", "options": "vcs_ref_head_revision"},
+            "matcher": {
+              "id": "byName",
+              "options": "vcs_ref_head_revision"
+            },
             "properties": [
-              {"id": "displayName", "value": "Commit SHA"},
-              {"id": "custom.width", "value": 120}
+              {
+                "id": "displayName",
+                "value": "Commit SHA"
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "vcs_ref_head_revision_author_name"},
+            "matcher": {
+              "id": "byName",
+              "options": "vcs_ref_head_revision_author_name"
+            },
             "properties": [
-              {"id": "displayName", "value": "Author"},
-              {"id": "custom.width", "value": 100}
+              {
+                "id": "displayName",
+                "value": "Author"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "span_name"},
-            "properties": [{"id": "displayName", "value": "Workflow"}]
-          },
-          {
-            "matcher": {"id": "byName", "options": "status_code"},
+            "matcher": {
+              "id": "byName",
+              "options": "workflow_step"
+            },
             "properties": [
-              {"id": "displayName", "value": "Status"},
-              {"id": "custom.displayMode", "value": "color-background"},
-              {"id": "mappings", "value": [
-                {"options": {"STATUS_CODE_OK": {"color": "green", "index": 0, "text": "Success"}}, "type": "value"},
-                {"options": {"STATUS_CODE_ERROR": {"color": "red", "index": 1, "text": "Failed"}}, "type": "value"}
-              ]}
+              {
+                "id": "displayName",
+                "value": "Workflow"
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "Value"},
-            "properties": [{"id": "displayName", "value": "Runs"}]
+            "matcher": {
+              "id": "byName",
+              "options": "step_status"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Status"
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "success": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "Success"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "failure": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "Failed"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Runs"
+              }
+            ]
           }
         ]
       },
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      }
+    },
+    {
+      "id": 99,
+      "title": "Complete Workflow Execution View",
+      "type": "table",
+      "description": "Sentry-style workflow execution view showing all steps, status, and duration",
+      "targets": [
+        {
+          "expr": "sum by (workflow_step, step_status, service_name) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "sum by (workflow_step, step_status, service_name) (github_actions_duration_seconds_sum{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}) / sum by (workflow_step, step_status, service_name) (github_actions_duration_seconds_count{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
+          "refId": "B",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "filterable": true,
+            "sortable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "workflow_step"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Workflow Step"
+              },
+              {
+                "id": "custom.width",
+                "value": 200
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "step_status"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Status"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "success": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "\u2705 Success"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "failure": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "\u274c Failed"
+                      }
+                    },
+                    "type": "value"
+                  },
+                  {
+                    "options": {
+                      "cancelled": {
+                        "color": "orange",
+                        "index": 2,
+                        "text": "\u23f8\ufe0f Cancelled"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Executions"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value #B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Avg Duration"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Workflow Step"
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      }
     }
   ],
   "links": [
@@ -386,7 +886,10 @@
       "icon": "external link",
       "includeVars": false,
       "keepTime": true,
-      "tags": ["github", "health"],
+      "tags": [
+        "github",
+        "health"
+      ],
       "targetBlank": false,
       "title": "Back to Health Overview",
       "tooltip": "Return to workflow health overview",
@@ -398,7 +901,10 @@
       "icon": "external link",
       "includeVars": true,
       "keepTime": true,
-      "tags": ["github", "performance"],
+      "tags": [
+        "github",
+        "performance"
+      ],
       "targetBlank": true,
       "title": "Repository Performance",
       "tooltip": "View repository performance dashboard",

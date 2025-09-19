@@ -1,6 +1,6 @@
 {
   "id": null,
-  "title": "GitHub Actions - Trace Details",
+  "title": "GitHub Actions - Deep Trace Analysis",
   "tags": [
     "github",
     "actions",
@@ -9,15 +9,16 @@
     "detailed"
   ],
   "timezone": "browser",
-  "description": "Detailed trace-level analysis of GitHub Actions workflow execution with step-by-step insights",
+  "description": "Advanced trace-level analysis of GitHub Actions with step performance metrics, error patterns, and execution insights for comprehensive observability",
   "panels": [
     {
       "id": 1,
       "title": "Recent Workflow Executions",
       "type": "table",
+      "description": "Overview of all workflow step executions with execution counts per repository and status",
       "targets": [
         {
-          "expr": "sum by (span_name, service_name, span_name, status_code) (github_actions_traces_span_metrics_calls_total)",
+          "expr": "sum by (workflow_step, service_name, step_status) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})",
           "refId": "A",
           "format": "table"
         }
@@ -32,7 +33,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "span_name"
+              "options": "workflow_step"
             },
             "properties": [
               {
@@ -56,7 +57,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "span_name"
+              "options": "workflow_step"
             },
             "properties": [
               {
@@ -68,7 +69,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "status_code"
+              "options": "step_status"
             },
             "properties": [
               {
@@ -102,11 +103,12 @@
       "id": 2,
       "title": "Step Duration Analysis",
       "type": "graph",
+      "description": "Average execution time per workflow step over time - identify performance bottlenecks and trending slowdowns",
       "targets": [
         {
-          "expr": "sum by (span_name) (rate(github_actions_traces_span_metrics_duration_seconds_sum[5m])) / sum by (span_name) (rate(github_actions_traces_span_metrics_duration_seconds_count[5m]))",
+          "expr": "sum by (workflow_step) (rate(github_actions_duration_seconds{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}_sum[5m])) / sum by (workflow_step) (rate(github_actions_duration_seconds{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}_count[5m]))",
           "refId": "A",
-          "legendFormat": "{{span_name}}"
+          "legendFormat": "{{workflow_step}}"
         }
       ],
       "yAxes": [
@@ -126,9 +128,10 @@
       "id": 3,
       "title": "Success Rate by Step",
       "type": "table",
+      "description": "Success percentage for each workflow step - quickly identify unreliable steps in your CI/CD pipeline",
       "targets": [
         {
-          "expr": "sum by (span_name) (github_actions_traces_span_metrics_calls_total{status_code=\"STATUS_CODE_OK\"}) / sum by (span_name) (github_actions_traces_span_metrics_calls_total) * 100",
+          "expr": "sum by (workflow_step) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=\"success\"}) / sum by (workflow_step) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}) * 100",
           "refId": "A",
           "format": "table"
         }
@@ -144,7 +147,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "span_name"
+              "options": "workflow_step"
             },
             "properties": [
               {
@@ -180,7 +183,7 @@
       "type": "heatmap",
       "targets": [
         {
-          "expr": "sum by (span_name) (rate(github_actions_traces_span_metrics_calls_total[5m]))",
+          "expr": "sum by (workflow_step) (rate(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -197,9 +200,9 @@
       "type": "graph",
       "targets": [
         {
-          "expr": "sum by (span_name) (rate(github_actions_traces_span_metrics_calls_total[1m]))",
+          "expr": "sum by (workflow_step) (rate(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[1m]))",
           "refId": "A",
-          "legendFormat": "{{span_name}}"
+          "legendFormat": "{{workflow_step}}"
         }
       ],
       "yAxes": [
@@ -219,16 +222,17 @@
       "id": 6,
       "title": "Step Duration Distribution",
       "type": "graph",
+      "description": "50th and 95th percentile duration for each step - understand performance variability and outliers",
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum by (span_name, le) (rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])))",
+          "expr": "histogram_quantile(0.50, sum by (workflow_step, le) (rate(github_actions_duration_seconds{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}_bucket[5m])))",
           "refId": "A",
-          "legendFormat": "{{span_name}} - 50th"
+          "legendFormat": "{{workflow_step}} - 50th"
         },
         {
-          "expr": "histogram_quantile(0.95, sum by (span_name, le) (rate(github_actions_traces_span_metrics_duration_seconds_bucket[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (workflow_step, le) (rate(github_actions_duration_seconds{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}_bucket[5m])))",
           "refId": "B",
-          "legendFormat": "{{span_name}} - 95th"
+          "legendFormat": "{{workflow_step}} - 95th"
         }
       ],
       "yAxes": [
@@ -250,7 +254,7 @@
       "type": "piechart",
       "targets": [
         {
-          "expr": "sum by (service_name) (github_actions_traces_span_metrics_calls_total)",
+          "expr": "sum by (service_name) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})",
           "refId": "A",
           "legendFormat": "{{service_name}}"
         }
@@ -268,7 +272,7 @@
       "type": "table",
       "targets": [
         {
-          "expr": "sum by (span_name, status_code) (github_actions_traces_span_metrics_calls_total{status_code!=\"STATUS_CODE_OK\"})",
+          "expr": "sum by (workflow_step, step_status) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status!=\"success\"})",
           "refId": "A",
           "format": "table"
         }
@@ -283,7 +287,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "span_name"
+              "options": "workflow_step"
             },
             "properties": [
               {
@@ -295,7 +299,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "status_code"
+              "options": "step_status"
             },
             "properties": [
               {
@@ -324,11 +328,118 @@
         "x": 12,
         "y": 42
       }
+    },
+    {
+      "id": 9,
+      "title": "Workflow Step Execution Flow",
+      "type": "nodeGraph",
+      "description": "Visual representation of workflow step execution flow and dependencies",
+      "targets": [
+        {
+          "expr": "sum by (workflow_step, step_status) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})",
+          "refId": "A",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "success": {
+                  "color": "green",
+                  "index": 0
+                },
+                "failure": {
+                  "color": "red",
+                  "index": 1
+                },
+                "cancelled": {
+                  "color": "orange",
+                  "index": 2
+                }
+              },
+              "type": "value"
+            }
+          ]
+        }
+      },
+      "options": {
+        "nodes": {
+          "mainStat": "value",
+          "secondaryStat": "last"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      }
     }
   ],
   "time": {
     "from": "now-24h",
     "to": "now"
   },
-  "refresh": "10s"
+  "refresh": "10s",
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_calls_total, service_name)",
+        "includeAll": true,
+        "multi": true,
+        "name": "service",
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          }
+        ],
+        "query": "label_values(github_actions_calls_total, service_name)",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query",
+        "label": "Repository"
+      },
+      {
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(github_actions_calls_total{service_name=~\"$service\"}, workflow_step)",
+        "includeAll": true,
+        "multi": true,
+        "name": "workflow_step",
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          }
+        ],
+        "query": "label_values(github_actions_calls_total{service_name=~\"$service\"}, workflow_step)",
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query",
+        "label": "Workflow Step"
+      }
+    ]
+  }
 }
