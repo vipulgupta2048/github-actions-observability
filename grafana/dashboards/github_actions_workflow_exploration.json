@@ -60,7 +60,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(github_actions_calls_total, service_name)",
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total, service_name)",
         "includeAll": true,
         "multi": true,
         "name": "service",
@@ -75,7 +75,7 @@
             "selected": true
           }
         ],
-        "query": "label_values(github_actions_calls_total{service_name=\"github-actions\"}, service_name)",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=\"github-actions\"}, service_name)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -92,7 +92,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(github_actions_calls_total{service_name=~\"$service\"}, workflow_step)",
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, workflow_step)",
         "includeAll": true,
         "multi": true,
         "name": "workflow_step",
@@ -103,7 +103,7 @@
             "selected": true
           }
         ],
-        "query": "label_values(github_actions_calls_total{service_name=\"github-actions\"}, workflow_step)",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=\"github-actions\"}, workflow_step)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -120,12 +120,12 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
         "includeAll": true,
         "multi": true,
         "name": "status",
         "options": [],
-        "query": "label_values(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}, step_status)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -177,16 +177,28 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "count(count by (service_name) (github_actions_calls_total{service_name=~\"$service\"}))",
-          "refId": "A"
+          "expr": "count(count by (service_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}))",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "count(count by (workflow_step) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}))",
-          "refId": "B"
+          "expr": "count(count by (workflow_step) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}))",
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "sum(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
-          "refId": "C"
+          "expr": "sum(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -248,16 +260,24 @@
       "type": "table",
       "targets": [
         {
-          "expr": "sort_desc(sum by (service_name, workflow_step, step_status, span_kind) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}))",
+          "expr": "sort_desc(sum by (service_name, workflow_step, step_status, span_kind) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}))",
           "refId": "A",
           "format": "table",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "sum by (service_name, workflow_step, step_status) (github_actions_duration_seconds_sum{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}) / sum by (service_name, workflow_step, step_status) (github_actions_duration_seconds_count{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
+          "expr": "sum by (service_name, workflow_step, step_status) (github_actions_traces_span_metrics_duration_seconds_sum{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}) / sum by (service_name, workflow_step, step_status) (github_actions_traces_span_metrics_duration_seconds_count{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
           "refId": "B",
           "format": "table",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -474,9 +494,13 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum by (workflow_step, step_status) (rate(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}[5m]))",
+          "expr": "sum by (workflow_step, step_status) (rate(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}[5m]))",
           "refId": "A",
-          "legendFormat": "{{workflow_step}} - {{step_status}}"
+          "legendFormat": "{{workflow_step}} - {{step_status}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -515,10 +539,14 @@
       "type": "table",
       "targets": [
         {
-          "expr": "topk(20, sum by (step_status, workflow_step, service_name) (github_actions_calls_total{step_status!=\"success\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}))",
+          "expr": "topk(20, sum by (step_status, workflow_step, service_name) (github_actions_traces_span_metrics_calls_total{step_status!=\"success\",service_name=~\"$service\",workflow_step=~\"$workflow_step\"}))",
           "refId": "A",
           "format": "table",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -600,10 +628,14 @@
       "type": "table",
       "targets": [
         {
-          "expr": "sum by (service_name, workflow_step, step_status, span_kind) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
+          "expr": "sum by (service_name, workflow_step, step_status, span_kind) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
           "refId": "A",
           "format": "table",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -727,16 +759,24 @@
       "description": "Sentry-style workflow execution view showing all steps, status, and duration",
       "targets": [
         {
-          "expr": "sum by (workflow_step, step_status, service_name) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
+          "expr": "sum by (workflow_step, step_status, service_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
           "refId": "A",
           "format": "table",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "sum by (workflow_step, step_status, service_name) (github_actions_duration_seconds_sum{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}) / sum by (workflow_step, step_status, service_name) (github_actions_duration_seconds_count{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
+          "expr": "sum by (workflow_step, step_status, service_name) (github_actions_traces_span_metrics_duration_seconds_sum{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"}) / sum by (workflow_step, step_status, service_name) (github_actions_traces_span_metrics_duration_seconds_count{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=~\"$status\"})",
           "refId": "B",
           "format": "table",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {

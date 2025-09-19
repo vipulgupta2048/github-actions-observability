@@ -18,9 +18,13 @@
       "description": "Overview of all workflow step executions with execution counts per repository and status",
       "targets": [
         {
-          "expr": "sum by (workflow_step, service_name, step_status) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})",
+          "expr": "sum by (workflow_step, service_name, step_status) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})",
           "refId": "A",
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -106,9 +110,13 @@
       "description": "Average execution time per workflow step over time - identify performance bottlenecks and trending slowdowns",
       "targets": [
         {
-          "expr": "sum by (workflow_step) (rate(github_actions_duration_seconds{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}_sum[5m])) / sum by (workflow_step) (rate(github_actions_duration_seconds{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}_count[5m]))",
+          "expr": "sum by (workflow_step) (rate(github_actions_traces_span_metrics_duration_seconds_sum{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])) / sum by (workflow_step) (rate(github_actions_traces_span_metrics_duration_seconds_count{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m]))",
           "refId": "A",
-          "legendFormat": "{{workflow_step}}"
+          "legendFormat": "{{workflow_step}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "yAxes": [
@@ -131,9 +139,13 @@
       "description": "Success percentage for each workflow step - quickly identify unreliable steps in your CI/CD pipeline",
       "targets": [
         {
-          "expr": "sum by (workflow_step) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=\"success\"}) / sum by (workflow_step) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}) * 100",
+          "expr": "sum by (workflow_step) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status=\"success\"}) / sum by (workflow_step) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}) * 100",
           "refId": "A",
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -183,8 +195,12 @@
       "type": "heatmap",
       "targets": [
         {
-          "expr": "sum by (workflow_step) (rate(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m]))",
-          "refId": "A"
+          "expr": "sum by (workflow_step) (rate(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m]))",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "gridPos": {
@@ -200,9 +216,13 @@
       "type": "graph",
       "targets": [
         {
-          "expr": "sum by (workflow_step) (rate(github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[1m]))",
+          "expr": "sum by (workflow_step) (rate(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[1m]))",
           "refId": "A",
-          "legendFormat": "{{workflow_step}}"
+          "legendFormat": "{{workflow_step}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "yAxes": [
@@ -225,14 +245,22 @@
       "description": "50th and 95th percentile duration for each step - understand performance variability and outliers",
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, sum by (workflow_step, le) (rate(github_actions_duration_seconds{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}_bucket[5m])))",
+          "expr": "histogram_quantile(0.50, sum by (workflow_step, le) (rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])))",
           "refId": "A",
-          "legendFormat": "{{workflow_step}} - 50th"
+          "legendFormat": "{{workflow_step}} - 50th",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         },
         {
-          "expr": "histogram_quantile(0.95, sum by (workflow_step, le) (rate(github_actions_duration_seconds{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}_bucket[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (workflow_step, le) (rate(github_actions_traces_span_metrics_duration_seconds_bucket{service_name=~\"$service\",workflow_step=~\"$workflow_step\"}[5m])))",
           "refId": "B",
-          "legendFormat": "{{workflow_step}} - 95th"
+          "legendFormat": "{{workflow_step}} - 95th",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "yAxes": [
@@ -254,9 +282,13 @@
       "type": "piechart",
       "targets": [
         {
-          "expr": "sum by (service_name) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})",
+          "expr": "sum by (service_name) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})",
           "refId": "A",
-          "legendFormat": "{{service_name}}"
+          "legendFormat": "{{service_name}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "gridPos": {
@@ -272,9 +304,13 @@
       "type": "table",
       "targets": [
         {
-          "expr": "sum by (workflow_step, step_status) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status!=\"success\"})",
+          "expr": "sum by (workflow_step, step_status) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\",step_status!=\"success\"})",
           "refId": "A",
-          "format": "table"
+          "format": "table",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -336,10 +372,14 @@
       "description": "Visual representation of workflow step execution flow and dependencies",
       "targets": [
         {
-          "expr": "sum by (workflow_step, step_status) (github_actions_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})",
+          "expr": "sum by (workflow_step, step_status) (github_actions_traces_span_metrics_calls_total{service_name=~\"$service\",workflow_step=~\"$workflow_step\"})",
           "refId": "A",
           "format": "table",
-          "instant": true
+          "instant": true,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          }
         }
       ],
       "fieldConfig": {
@@ -395,7 +435,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(github_actions_calls_total, service_name)",
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total, service_name)",
         "includeAll": true,
         "multi": true,
         "name": "service",
@@ -406,7 +446,7 @@
             "selected": true
           }
         ],
-        "query": "label_values(github_actions_calls_total, service_name)",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total, service_name)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
@@ -422,7 +462,7 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(github_actions_calls_total{service_name=~\"$service\"}, workflow_step)",
+        "definition": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, workflow_step)",
         "includeAll": true,
         "multi": true,
         "name": "workflow_step",
@@ -433,7 +473,7 @@
             "selected": true
           }
         ],
-        "query": "label_values(github_actions_calls_total{service_name=~\"$service\"}, workflow_step)",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{service_name=~\"$service\"}, workflow_step)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
