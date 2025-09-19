@@ -407,3 +407,17 @@ prometheus:
 - Monitor collector logs for unauthorized access attempts
 - Regularly update Docker images
 
+## 📄 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+This project uses GitHub Copilot instructions to ensure consistent code quality and standards. Please review the `.github/copilot-instructions.md` file before contributing.
+
+## 📚 Additional Resources
+
+- [OpenTelemetry Collector Documentation](https://opentelemetry.io/docs/collector/)
+- [Prometheus Documentation](https://prometheus.io/docs/)
+- [Grafana Documentation](https://grafana.com/docs/)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
