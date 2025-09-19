@@ -57,10 +57,7 @@ flowchart TD
     
     subgraph GRAFANA ["📈 Grafana Dashboards"]
         direction LR
-        D1["📊 Overview &<br/>Observability"]
-        D2["💚 Workflow<br/>Health"]
-        D3["📋 Complete<br/>Metrics"]
-        D4["🏆 Repository<br/>Performance"]
+        D1["📊 Overview"] --- D2["💚 Health"] --- D3["📋 Metrics"] --- D4["🏆 Performance"]
     end
     
     %% User Access
