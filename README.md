@@ -14,95 +14,63 @@ Complete observability solution for GitHub Actions workflows using OpenTelemetry
 ## Architecture
 
 ```mermaid
-graph TB
-    %% GitHub Actions Trigger
-    GH[GitHub Repository<br/>🏠 Actions Triggered] 
+graph LR
+    %% Source
+    GH[GitHub Repository<br/>🏠 Actions Triggered]
     
-    %% Webhook Flow
-    WH[GitHub Webhook<br/>📡 POST /events]
-    CF[Cloudflare Tunnel<br/>🔒 trycloudflare.com]
+    %% Webhook Path (Horizontal)
+    GH -->|"workflow_run<br/>workflow_job events"| WH[GitHub Webhook<br/>📡 POST /events]
+    WH -->|"HTTPS POST"| CF[Cloudflare Tunnel<br/>🔒 Secure Proxy]
+    CF -->|"localhost:9504"| GHR[GitHub Receiver<br/>🎯 Webhook Handler]
     
-    %% OpenTelemetry Collector Components
-    subgraph "OpenTelemetry Collector 🔄"
-        GHR[GitHub Receiver<br/>🎯 Port 9504]
-        RP[Resource Processor<br/>🏷️ Add Metadata]
-        AP[Attributes Processor<br/>🔧 Transform Data]
-        BP[Batch Processor<br/>📦 Buffer Events]
-        SMP[Span Metrics Processor<br/>📊 Generate RED Metrics]
-        PE[Prometheus Exporter<br/>📈 Port 9464]
+    %% Collector Processing Pipeline (Horizontal with vertical internals)
+    subgraph COLLECTOR ["OpenTelemetry Collector 🔄"]
+        direction TB
+        GHR --> RP[Resource Processor<br/>🏷️ Metadata]
+        RP --> AP[Attributes Processor<br/>🔧 Transform]
+        AP --> BP[Batch Processor<br/>📦 Buffer]
+        BP --> SMP[Span Metrics<br/>📊 RED Metrics]
+        SMP --> PE[Prometheus Exporter<br/>📈 :9464]
     end
     
-    %% GitHub API Scraping (Parallel Path)
-    subgraph "GitHub API Scraping 🌐"
-        GHS[GitHub Scraper<br/>🔍 REST/GraphQL API]
-        AUTH[Bearer Token Auth<br/>🔐 GitHub PAT]
-        VCS[VCS Metrics<br/>📊 Repos, PRs, Changes]
+    %% Parallel API Scraping (Vertical compact)
+    subgraph API ["GitHub API Scraping 🌐"]
+        direction TB
+        AUTH[Bearer Token Auth<br/>🔐 GitHub PAT] 
+        AUTH --> GHS[GitHub Scraper<br/>🔍 REST API]
+        GHS --> VCS[VCS Metrics<br/>📊 Repos, PRs]
     end
     
-    %% Storage & Visualization
-    PROM[Prometheus<br/>⚡ Metrics Storage<br/>30 days retention]
+    %% Storage
+    PE -->|"Scrape :9464/metrics"| PROM[Prometheus<br/>⚡ 30-day Storage]
+    VCS -.->|"Additional metrics"| PE
     
-    subgraph "Grafana Dashboards 📈"
+    %% Visualization Layer
+    subgraph DASHBOARDS ["Grafana Dashboards 📈"]
+        direction TB
         D1[Overview & Observability<br/>📊 Executive KPIs]
-        D2[Workflow Exploration<br/>🔍 Detailed Analysis]
+        D2[Workflow Health<br/>� Monitoring] 
         D3[Complete Metrics<br/>📋 All Data Points]
         D4[Repository Performance<br/>🏆 Strategic Metrics]
-        D5[Workflow Health<br/>💚 Monitoring]
-        D6[Workflow Analysis<br/>🎯 Pattern Detection]
     end
     
-    %% User Access
-    USER[User Browser<br/>👤 localhost:3000]
-    
-    %% Data Flow Connections
-    GH -->|"workflow_run<br/>workflow_job events"| WH
-    WH -->|"HTTPS POST<br/>JSON payload"| CF
-    CF -->|"Secure tunnel<br/>localhost:9504"| GHR
-    
-    %% Collector Internal Flow
-    GHR --> RP
-    RP --> AP
-    AP --> BP
-    BP --> SMP
-    SMP --> PE
-    
-    %% Parallel API Scraping
-    AUTH -->|"Authenticate"| GHS
-    GHS -->|"VCS data<br/>repo metrics"| VCS
-    VCS --> PE
-    
-    %% Export to Prometheus
-    PE -->|"Scrape endpoint<br/>:9464/metrics"| PROM
-    
-    %% Grafana Queries
-    PROM <-->|"PromQL queries"| D1
-    PROM <-->|"PromQL queries"| D2
-    PROM <-->|"PromQL queries"| D3
-    PROM <-->|"PromQL queries"| D4
-    PROM <-->|"PromQL queries"| D5
-    PROM <-->|"PromQL queries"| D6
-    
-    %% User Access
-    USER --> D1
-    USER --> D2
-    USER --> D3
-    USER --> D4
-    USER --> D5
-    USER --> D6
+    %% Final connections
+    PROM <-->|"PromQL queries"| DASHBOARDS
+    USER[User Browser<br/>👤 :3000] --> DASHBOARDS
     
     %% Styling
     classDef github fill:#24292e,stroke:#f9826c,stroke-width:2px,color:#fff
-    classDef tunnel fill:#f38020,stroke:#fff,stroke-width:2px,color:#fff
+    classDef tunnel fill:#f38020,stroke:#fff,stroke-width:2px,color:#fff  
     classDef collector fill:#326ce5,stroke:#fff,stroke-width:2px,color:#fff
     classDef storage fill:#e6522c,stroke:#fff,stroke-width:2px,color:#fff
     classDef dashboard fill:#f46800,stroke:#fff,stroke-width:2px,color:#fff
     classDef user fill:#00d924,stroke:#fff,stroke-width:2px,color:#fff
     
-    class GH,WH,GHS,AUTH github
+    class GH,WH github
     class CF tunnel
-    class GHR,RP,AP,BP,SMP,PE,VCS collector
+    class GHR,RP,AP,BP,SMP,PE,AUTH,GHS,VCS collector  
     class PROM storage
-    class D1,D2,D3,D4,D5,D6 dashboard
+    class D1,D2,D3,D4 dashboard
     class USER user
 ```
 
