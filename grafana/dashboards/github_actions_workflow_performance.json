@@ -1,0 +1,287 @@
+{
+  "title": "GitHub Actions - Workflow Performance",
+  "uid": "github-actions-performance",
+  "description": "Detailed workflow performance analysis with duration percentiles and bottleneck identification",
+  "tags": [
+    "github-actions",
+    "performance",
+    "metrics"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus"
+      },
+      {
+        "name": "organization",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total, organization)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2
+      },
+      {
+        "name": "repository",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{organization=~\"$organization\"}, repository)",
+        "multi": false,
+        "includeAll": false,
+        "refresh": 2
+      },
+      {
+        "name": "workflow",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{repository=\"$repository\"}, workflow)",
+        "multi": false,
+        "includeAll": false,
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Workflow Duration Percentiles",
+      "type": "timeseries",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(github_actions_duration_seconds_bucket{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[5m])) by (le))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.90, sum(rate(github_actions_duration_seconds_bucket{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[5m])) by (le))",
+          "legendFormat": "P90"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(github_actions_duration_seconds_bucket{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[5m])) by (le))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(github_actions_duration_seconds_bucket{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[5m])) by (le))",
+          "legendFormat": "P99"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "lastNotNull",
+            "max"
+          ]
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Average Duration Trend",
+      "type": "timeseries",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_duration_seconds_sum{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[5m])) / sum(rate(github_actions_duration_seconds_count{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[5m]))",
+          "legendFormat": "Avg Duration"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Step Duration Breakdown",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "topk(20, sum(rate(github_actions_duration_seconds_sum{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[1h])) by (workflow_step) / sum(rate(github_actions_duration_seconds_count{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[1h])) by (workflow_step))",
+          "legendFormat": "{{workflow_step}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Step Execution Frequency",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "topk(20, sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[24h])) by (workflow_step))",
+          "legendFormat": "{{workflow_step}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Duration Distribution Heatmap",
+      "type": "heatmap",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_duration_seconds_bucket{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[5m])) by (le)",
+          "format": "heatmap",
+          "legendFormat": "{{le}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "options": {
+        "calculate": false,
+        "cellGap": 2,
+        "color": {
+          "mode": "scheme",
+          "scheme": "Spectral"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Branch Performance Comparison",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_duration_seconds_sum{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[24h])) by (branch) / sum(rate(github_actions_duration_seconds_count{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\"}[24h])) by (branch)",
+          "legendFormat": "{{branch}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Success Rate by Branch",
+      "type": "piechart",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\",conclusion=\"success\"}[24h])) by (branch)",
+          "legendFormat": "{{branch}} - Success",
+          "instant": true
+        },
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",repository=\"$repository\",workflow=\"$workflow\",conclusion!=\"success\"}[24h])) by (branch)",
+          "legendFormat": "{{branch}} - Failed",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ]
+        },
+        "pieType": "donut"
+      }
+    }
+  ]
+}

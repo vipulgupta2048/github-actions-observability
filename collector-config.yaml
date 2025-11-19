@@ -9,16 +9,12 @@ receivers:
       secret: ${GITHUB_WEBHOOK_SECRET}
       service_name: "gh"
     scrapers:
+      # Dummy scraper required by validation - see past-decisions/GITHUB_RECEIVER_SCRAPER_REQUIREMENT.md
       scraper:
-        github_org: ${GITHUB_ORG}
-        search_query: "repo:${GITHUB_ORG}/${GITHUB_REPO}"
-        auth:
-          authenticator: bearertokenauth
+        github_org: "dummy-org"
+        # No auth block = no API calls = no authentication errors
 
-extensions:
-  # Bearer token authentication for GitHub API scraping
-  bearertokenauth:
-    token: ${GITHUB_TOKEN}
+# No extensions needed for webhook-only configuration
 
 processors:
   batch:
@@ -37,23 +33,120 @@ processors:
       - key: deployment.environment
         value: "production"
         action: upsert
+  
+  # Metricstransform processor renames spanmetrics output to match dashboard queries
+  metricstransform:
+    transforms:
+      # Rename calls metric
+      - include: traces.span.metrics.calls
+        match_type: strict
+        action: update
+        new_name: github_actions_calls_total
+      # Rename duration metric
+      - include: traces.span.metrics.duration
+        match_type: strict
+        action: update
+        new_name: github_actions_duration_seconds
 
   # Transform processor handles both attribute mapping and status code conversion
   transform:
     trace_statements:
+      # EXTRACT REPOSITORY FULL NAME from cicd.pipeline.task.run.url.full
+      # URL format: https://github.com/owner/repo/actions/runs/...
+      # Extract owner/repo pattern from job URL
+      - set(resource.attributes["url_parts"], ExtractPatterns(resource.attributes["cicd.pipeline.task.run.url.full"], "https://github\\.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)/.*"))
+            where resource.attributes["cicd.pipeline.task.run.url.full"] != nil
+      
+      # Construct full repository name from extracted parts
+      - set(resource.attributes["vcs.repository.full_name"], 
+            Concat([resource.attributes["url_parts"]["owner"], "/", resource.attributes["url_parts"]["repo"]], ""))
+            where resource.attributes["url_parts"] != nil 
+            and resource.attributes["url_parts"]["owner"] != nil
+            and resource.attributes["url_parts"]["repo"] != nil
+      
+      # Try workflow URL if job URL didn't work
+      - set(resource.attributes["url_parts"], ExtractPatterns(resource.attributes["cicd.pipeline.run.url.full"], "https://github\\.com/(?P<owner>[^/]+)/(?P<repo>[^/]+)/.*"))
+            where resource.attributes["cicd.pipeline.run.url.full"] != nil
+            and resource.attributes["vcs.repository.full_name"] == nil
+      
+      - set(resource.attributes["vcs.repository.full_name"], 
+            Concat([resource.attributes["url_parts"]["owner"], "/", resource.attributes["url_parts"]["repo"]], ""))
+            where resource.attributes["url_parts"] != nil 
+            and resource.attributes["url_parts"]["owner"] != nil
+            and resource.attributes["url_parts"]["repo"] != nil
+            and resource.attributes["vcs.repository.full_name"] == nil
+      
+      # Copy repository full name to span attributes for spanmetrics dimensions
+      - set(span.attributes["repository"], resource.attributes["vcs.repository.full_name"]) 
+            where resource.attributes["vcs.repository.full_name"] != nil
+      
+      # CRITICAL: Identify event type to avoid double-counting in dashboards
+      # workflow_job events have worker.id (runner info), workflow_run events don't
+      - set(span.attributes["github_event_type"], "workflow_job") 
+            where resource.attributes["cicd.pipeline.worker.id"] != nil
+      - set(span.attributes["github_event_type"], "workflow_run") 
+            where resource.attributes["cicd.pipeline.worker.id"] == nil
+      
+      # Map span name and status to custom dimensions
       - set(span.attributes["workflow_step"], span.name) where span.name != nil
       - set(span.attributes["step_status"], "success") where span.status.code == STATUS_CODE_OK
       - set(span.attributes["step_status"], "error") where span.status.code == STATUS_CODE_ERROR 
       - set(span.attributes["step_status"], "unset") where span.status.code == STATUS_CODE_UNSET
+      
+      # ENRICHMENT: Copy resource attributes to span attributes for spanmetrics dimensions
+      # Branch & VCS Context
+      - set(span.attributes["branch"], resource.attributes["vcs.ref.head"]) where resource.attributes["vcs.ref.head"] != nil
+      - set(span.attributes["ref_type"], resource.attributes["vcs.ref.type"]) where resource.attributes["vcs.ref.type"] != nil
+      - set(span.attributes["commit_sha"], resource.attributes["vcs.ref.head.revision"]) where resource.attributes["vcs.ref.head.revision"] != nil
+      - set(span.attributes["commit_author"], resource.attributes["vcs.ref.head.revision.author.name"]) where resource.attributes["vcs.ref.head.revision.author.name"] != nil
+      
+      # Workflow Context
+      - set(span.attributes["workflow"], resource.attributes["cicd.pipeline.name"]) where resource.attributes["cicd.pipeline.name"] != nil
+      - set(span.attributes["workflow_run_id"], resource.attributes["cicd.pipeline.run.id"]) where resource.attributes["cicd.pipeline.run.id"] != nil
+      - set(span.attributes["workflow_url"], resource.attributes["cicd.pipeline.run.url.full"]) where resource.attributes["cicd.pipeline.run.url.full"] != nil
+      - set(span.attributes["triggered_by"], resource.attributes["cicd.pipeline.run.sender.login"]) where resource.attributes["cicd.pipeline.run.sender.login"] != nil
+      - set(span.attributes["conclusion"], resource.attributes["cicd.pipeline.run.status"]) where resource.attributes["cicd.pipeline.run.status"] != nil
+      
+      # Job Context
+      # For workflow_job events, cicd.pipeline.name contains the job name (when worker attributes are present)
+      # For workflow_run events, cicd.pipeline.name contains the workflow name
+      - set(span.attributes["job_name"], resource.attributes["cicd.pipeline.name"]) where resource.attributes["cicd.pipeline.worker.id"] != nil
+      - set(span.attributes["job_name"], resource.attributes["cicd.pipeline.task.name"]) where resource.attributes["cicd.pipeline.task.name"] != nil
+      - set(span.attributes["job_id"], resource.attributes["cicd.pipeline.task.run.id"]) where resource.attributes["cicd.pipeline.task.run.id"] != nil
+      - set(span.attributes["job_url"], resource.attributes["cicd.pipeline.task.run.url.full"]) where resource.attributes["cicd.pipeline.task.run.url.full"] != nil
+      - set(span.attributes["job_status"], resource.attributes["cicd.pipeline.run.task.status"]) where resource.attributes["cicd.pipeline.run.task.status"] != nil
+      - set(span.attributes["job_triggered_by"], resource.attributes["cicd.pipeline.task.run.sender.login"]) where resource.attributes["cicd.pipeline.task.run.sender.login"] != nil
+      
+      # Runner Context
+      - set(span.attributes["runner_name"], resource.attributes["cicd.pipeline.worker.name"]) where resource.attributes["cicd.pipeline.worker.name"] != nil
+      # runner_os from labels array - will be serialized as JSON array in metrics (e.g., ["ubuntu-latest"])
+      # This is a limitation of OTTL - cannot easily extract first element from array
+      - set(span.attributes["runner_os"], resource.attributes["cicd.pipeline.worker.labels"]) where resource.attributes["cicd.pipeline.worker.labels"] != nil
+      - set(span.attributes["runner_id"], resource.attributes["cicd.pipeline.worker.id"]) where resource.attributes["cicd.pipeline.worker.id"] != nil
 
 exporters:
+  # OTLP exporter for Tempo (traces backend)
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+    sending_queue:
+      enabled: true
+      num_consumers: 10
+      queue_size: 1000
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+
   # Export metrics to Prometheus scrape endpoint
+  # NOTE: No namespace here because metricstransform already renamed metrics to github_actions_*
   prometheus:
     endpoint: "0.0.0.0:9464"
-    namespace: "github_actions"
     resource_to_telemetry_conversion:
       enabled: false
-  
+
   # Debug exporter for troubleshooting
   debug:
     verbosity: detailed
@@ -61,40 +154,57 @@ exporters:
     sampling_thereafter: 500
 
 connectors:
-  # Generate metrics from spans for Prometheus (RED metrics)
+  # SIMPLIFIED: Generate high-level metrics from spans for Prometheus
+  # Purpose: Big picture organization overview dashboards only
+  # Detailed analysis uses Tempo traces directly
   spanmetrics:
     histogram:
       explicit:
-        buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms, 500ms, 1000ms, 2000ms, 5s, 10s, 20s, 40s, 60s]
+        # Focused buckets for CI/CD workflows (optimized for common durations)
+        buckets: [1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200]
       unit: "s"
+    
+    # MINIMAL dimensions for organization-level overview only
     dimensions:
-      # Use minimal custom dimensions to avoid all conflicts
-      - name: workflow_step
+      # Event type to distinguish workflow_run vs workflow_job (prevents double-counting)
+      - name: github_event_type
         default: "unknown"
-      - name: step_status
+      
+      # Repository (full name with org/repo from payload)
+      - name: repository
         default: "unknown"
+      
+      # Workflow name (high-level categorization)
+      - name: workflow
+        default: "unknown"
+      
+      # Branch (main/master vs feature branches)
+      - name: branch
+        default: "unknown"
+      
+      # Overall workflow conclusion (success/failure for big picture)
+      - name: conclusion
+        default: "unknown"
+    
+    # Enable exemplars to link metrics → traces in Tempo
     exemplars:
       enabled: true
-    dimensions_cache_size: 1000
+    
+    dimensions_cache_size: 500
     aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
     metrics_flush_interval: 15s
     metrics_expiration: 30m
-    resource_metrics_key_attributes:
-      - service.name
-      - service.version
-      - deployment.environment
 
 service:
-  extensions: [bearertokenauth]
   pipelines:
-    # Traces pipeline for GitHub Actions workflow spans
+    # DUAL BACKEND: Traces go to both Tempo (for waterfall diagrams) and spanmetrics (for overview metrics)
     traces:
       receivers: [github]
       processors: [resource, transform, batch]
-      exporters: [debug, spanmetrics]
+      exporters: [otlp/tempo, spanmetrics, debug]  # ← Added Tempo export!
     
-    # Metrics pipeline for GitHub Actions metrics (includes span-derived metrics)
+    # Metrics pipeline: High-level organization overview only
     metrics:
-      receivers: [github, spanmetrics]
-      processors: [resource, batch]
-      exporters: [prometheus, debug]
+      receivers: [spanmetrics]
+      processors: [metricstransform, resource, batch]
+      exporters: [prometheus, debug] 

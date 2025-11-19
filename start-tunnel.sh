@@ -54,24 +54,56 @@ start_tunnel() {
   TUNNEL_PID=$!
 
   echo "⏳ Waiting for tunnel to initialize..."
-  sleep 3
-
-  # Try reading URL from log
+  
+  # Try reading URL from log with multiple patterns
   local url=""
-  for attempt in $(seq 1 20); do
+  local last_error=""
+  for attempt in $(seq 1 60); do
     if [ -f "${LOG_FILE}" ]; then
-      url=$(grep -o 'https://[^[:space:]]*\.trycloudflare\.com' "${LOG_FILE}" | head -1 || true)
+      # Look for the URL in various formats that cloudflared outputs
+      url=$(grep -oE 'https://[a-zA-Z0-9_-]+\.trycloudflare\.com' "${LOG_FILE}" | head -1 || true)
+      
+      # Also try to find it in connection messages
+      if [ -z "${url}" ]; then
+        url=$(grep -E '(Your quick Tunnel|INF \+)' "${LOG_FILE}" | grep -oE 'https://[a-zA-Z0-9_-]+\.trycloudflare\.com' | head -1 || true)
+      fi
+      
+      # Check for successful connection indicator
+      if [ -z "${url}" ]; then
+        if grep -q "Connection.*registered" "${LOG_FILE}" 2>/dev/null; then
+          # Connection registered but URL not found yet, keep waiting
+          :
+        elif grep -q "ERR.*Serve tunnel error" "${LOG_FILE}" 2>/dev/null; then
+          last_error="Tunnel connection errors detected"
+        fi
+      fi
+      
       if [ -n "${url}" ]; then
         break
       fi
     fi
+    
+    # Check if process is still alive
+    if ! kill -0 ${TUNNEL_PID} 2>/dev/null; then
+      echo "❌ Tunnel process died unexpectedly" >&2
+      break
+    fi
+    
     sleep 1
-    echo "  Attempt ${attempt}/20..."
+    if [ $((attempt % 10)) -eq 0 ]; then
+      echo "  Attempt ${attempt}/60... (waiting for successful connection)"
+    fi
   done
 
   if [ -z "${url}" ]; then
     echo "❌ Failed to get tunnel URL. Check ${LOG_FILE} for errors." >&2
-    echo "   Tip: If you see rate limits, wait a bit and re-run."
+    if [ -n "${last_error}" ]; then
+      echo "   ${last_error}"
+    fi
+    echo "   Tip: Cloudflare tunnel may be experiencing issues. Try again in a moment."
+    echo ""
+    echo "📝 Full log output:"
+    cat "${LOG_FILE}" 2>/dev/null || echo "   (log file empty or unreadable)"
     kill ${TUNNEL_PID} >/dev/null 2>&1 || true
     exit 1
   fi

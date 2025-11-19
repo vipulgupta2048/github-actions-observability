@@ -1,0 +1,90 @@
+# Grafana Tempo Configuration for GitHub Actions Traces
+# Optimized for CI/CD workflow observability with waterfall diagrams
+
+server:
+  http_listen_port: 3200
+  log_level: info
+
+# Receive traces via OTLP from OpenTelemetry Collector
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+# Trace ingestion and batching
+ingester:
+  max_block_duration: 5m               # Create blocks every 5 minutes
+  max_block_bytes: 1_000_000           # 1MB blocks
+
+# Compaction and retention
+compactor:
+  compaction:
+    block_retention: 168h              # 7 days retention for traces
+    compacted_block_retention: 24h
+    compaction_window: 1h
+    max_compaction_objects: 1000000
+    retention_concurrency: 10
+
+# Storage backend - local filesystem (can be switched to S3/GCS later)
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+    pool:
+      max_workers: 100
+      queue_depth: 10000
+
+# Multitenancy (disabled for single-tenant deployment)
+multitenancy_enabled: false
+
+# Metrics generator configuration for TraceQL metric queries
+# This enables rate() and histogram_over_time() functions in TraceQL
+metrics_generator:
+  # Registry configuration for single-node deployment
+  registry:
+    external_labels:
+      source: tempo
+      cluster: github-actions-observability
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+  # Processor configuration - minimal since we use OTel spanmetrics for main metrics
+  processor:
+    service_graphs:
+      # Minimal config - primarily for TraceQL queries
+      dimensions: []
+      enable_client_server_prefix: false
+    span_metrics:
+      # Minimal config - OTel Collector handles main span metrics
+      dimensions: []
+      enable_target_info: false
+
+# Query frontend for improved query performance
+query_frontend:
+  max_outstanding_per_tenant: 2000
+  search:
+    max_duration: 168h  
+
+# Querier configuration - allow longer time range queries
+querier:
+  max_concurrent_queries: 20
+  search:
+    query_timeout: 300s  # 5 minutes timeout for queries
+  trace_by_id:
+    query_timeout: 60s
+
+# Overrides/Limits configuration - allow longer time ranges
+overrides:
+  max_search_duration: 720h  # 30 days (24h * 30)
+  max_bytes_per_trace: 50000000  # 50MB per trace
+  ingestion_rate_limit_bytes: 50000000
+  ingestion_burst_size_bytes: 100000000

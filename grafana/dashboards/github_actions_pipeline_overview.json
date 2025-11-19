@@ -1,0 +1,645 @@
+{
+  "title": "GitHub Actions - Pipeline Overview",
+  "uid": "github-actions-pipeline-overview",
+  "description": "GitLab-style overview of all GitHub Actions workflows across repositories and organizations",
+  "tags": [
+    "github-actions",
+    "ci-cd",
+    "overview"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": {
+          "text": "Prometheus",
+          "value": "Prometheus"
+        }
+      },
+      {
+        "name": "organization",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total, organization)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "repository",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{organization=~\"$organization\"}, repository)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "workflow",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{repository=~\"$repository\"}, workflow)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "branch",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{repository=~\"$repository\"}, branch)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Workflow Runs (24h)",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h]))",
+          "legendFormat": "Total Runs"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name",
+        "orientation": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "blue"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Success Rate (24h)",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\",conclusion=\"success\"}[24h])) / sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h])) * 100",
+          "legendFormat": "Success Rate"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "red"
+              },
+              {
+                "value": 80,
+                "color": "yellow"
+              },
+              {
+                "value": 95,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Failed Workflows (24h)",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\",conclusion!=\"success\"}[24h]))",
+          "legendFormat": "Failed"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "yellow"
+              },
+              {
+                "value": 5,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Avg Workflow Duration",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_duration_seconds_sum{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h])) / sum(rate(github_actions_duration_seconds_count{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h]))",
+          "legendFormat": "Avg Duration"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 300,
+                "color": "yellow"
+              },
+              {
+                "value": 600,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Active Users (24h)",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "count(count by (triggered_by) (increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h])))",
+          "legendFormat": "Users"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "none",
+        "colorMode": "value",
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "P95 Duration (24h)",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(github_actions_duration_seconds_bucket{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h])) by (le))",
+          "legendFormat": "P95"
+        }
+      ],
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "area",
+        "colorMode": "value",
+        "textMode": "value_and_name"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Workflow Runs Over Time",
+      "type": "timeseries",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[5m])) by (workflow) * 60",
+          "legendFormat": "{{workflow}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "rpm",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Success Rate by Workflow",
+      "type": "timeseries",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\",conclusion=\"success\"}[5m])) by (workflow) / sum(rate(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[5m])) by (workflow) * 100",
+          "legendFormat": "{{workflow}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "red"
+              },
+              {
+                "value": 80,
+                "color": "yellow"
+              },
+              {
+                "value": 95,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Success Rate by Repository",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\",conclusion=\"success\"}[24h])) by (repository) / sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h])) by (repository) * 100",
+          "legendFormat": "{{repository}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 14
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "red"
+              },
+              {
+                "value": 80,
+                "color": "yellow"
+              },
+              {
+                "value": 95,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Workflow Duration by Repository",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_duration_seconds_sum{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h])) by (repository) / sum(rate(github_actions_duration_seconds_count{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h])) by (repository)",
+          "legendFormat": "{{repository}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 14
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Most Active Users",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "topk(10, sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}[24h])) by (triggered_by))",
+          "legendFormat": "{{triggered_by}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 14
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Recent Workflow Runs",
+      "type": "table",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",repository=~\"$repository\",workflow=~\"$workflow\",branch=~\"$branch\"}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": true
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "instance": true,
+              "job": true,
+              "exported_job": true,
+              "otel_scope_name": true,
+              "service_name": true,
+              "span_kind": true,
+              "status_code": true,
+              "__name__": true
+            },
+            "indexByName": {
+              "repository": 0,
+              "workflow": 1,
+              "branch": 2,
+              "triggered_by": 3,
+              "conclusion": 4,
+              "step_status": 5,
+              "Value": 6
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "conclusion"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text",
+                  "mode": "gradient"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": null,
+                      "color": "red"
+                    },
+                    {
+                      "value": "success",
+                      "color": "green"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

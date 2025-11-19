@@ -28,18 +28,19 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=30d"  # Keep 30 days of data
       - "--web.enable-lifecycle"  # Allow config reload
+      - "--web.enable-remote-write-receiver"  # Enable remote write for Tempo metrics-generator
     ports:
       - "9090:9090"
     networks:
       - observability
 
-  # Removed Tempo and Loki - using Prometheus-only observability
 
   grafana:
     image: grafana/grafana:latest
     depends_on:
       - prometheus
       - collector
+      - tempo
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
@@ -53,6 +54,22 @@ services:
     networks:
       - observability
 
+  # Grafana Tempo - Distributed tracing backend for waterfall diagrams
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP (UI and API)
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+    networks:
+      - observability
+    restart: unless-stopped
+
 # Named volumes for persistent storage across deployments
 volumes:
   otel_data:
@@ -60,6 +77,8 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  tempo_data:
     driver: local
 
 # Network for service communication

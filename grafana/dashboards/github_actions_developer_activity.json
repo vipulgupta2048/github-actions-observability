@@ -1,0 +1,346 @@
+{
+  "title": "GitHub Actions - Developer Activity",
+  "uid": "github-actions-developers",
+  "description": "Developer-centric view of workflow triggers, success rates, and build times",
+  "tags": [
+    "github-actions",
+    "developers",
+    "activity"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus"
+      },
+      {
+        "name": "organization",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total, organization)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2
+      },
+      {
+        "name": "repository",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{organization=~\"$organization\"}, repository)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2
+      },
+      {
+        "name": "developer",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total{repository=~\"$repository\"}, triggered_by)",
+        "multi": false,
+        "includeAll": false,
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Workflows Triggered",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\"}[7d]))"
+        }
+      ],
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Success Rate",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\",conclusion=\"success\"}[7d])) / sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\"}[7d])) * 100"
+        }
+      ],
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "red"
+              },
+              {
+                "value": 80,
+                "color": "yellow"
+              },
+              {
+                "value": 95,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Avg Build Time",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_duration_seconds_sum{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\"}[7d])) / sum(rate(github_actions_duration_seconds_count{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\"}[7d]))"
+        }
+      ],
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Failed Workflows",
+      "type": "stat",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\",conclusion!=\"success\"}[7d]))"
+        }
+      ],
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "green"
+              },
+              {
+                "value": 1,
+                "color": "yellow"
+              },
+              {
+                "value": 10,
+                "color": "red"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Workflow Activity Over Time",
+      "type": "timeseries",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_calls_total{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\"}[1h])) by (workflow) * 3600",
+          "legendFormat": "{{workflow}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "lineInterpolation": "linear",
+            "barAlignment": 0,
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Build Duration Trend",
+      "type": "timeseries",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_duration_seconds_sum{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\"}[1h])) / sum(rate(github_actions_duration_seconds_count{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\"}[1h]))",
+          "legendFormat": "Avg Duration"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Most Used Workflows",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "topk(10, sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\"}[7d])) by (workflow))",
+          "legendFormat": "{{workflow}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      }
+    },
+    {
+      "id": 8,
+      "title": "Repositories Contributed To",
+      "type": "piechart",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",triggered_by=\"$developer\",repository=~\"$repository\"}[7d])) by (repository)",
+          "legendFormat": "{{repository}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum",
+            "percent"
+          ]
+        },
+        "pieType": "donut"
+      }
+    },
+    {
+      "id": 9,
+      "title": "All Developers Leaderboard",
+      "type": "table",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",repository=~\"$repository\"}[7d])) by (triggered_by)",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "triggered_by": "Developer",
+              "Value": "Total Runs"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Total Runs",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

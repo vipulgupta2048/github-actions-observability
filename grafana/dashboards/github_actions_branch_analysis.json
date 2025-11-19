@@ -1,0 +1,319 @@
+{
+  "title": "GitHub Actions - Branch & Repository Analysis",
+  "uid": "github-actions-branches",
+  "description": "Cross-repository and branch performance comparison",
+  "tags": [
+    "github-actions",
+    "branches",
+    "repositories"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus"
+      },
+      {
+        "name": "organization",
+        "type": "query",
+        "datasource": "${datasource}",
+        "query": "label_values(github_actions_traces_span_metrics_calls_total, organization)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 2
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Repository Success Rates",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",conclusion=\"success\"}[7d])) by (repository) / sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\"}[7d])) by (repository) * 100",
+          "legendFormat": "{{repository}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "value": 0,
+                "color": "red"
+              },
+              {
+                "value": 80,
+                "color": "yellow"
+              },
+              {
+                "value": 95,
+                "color": "green"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Repository Activity (Runs per Day)",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\"}[7d])) by (repository) / 7",
+          "legendFormat": "{{repository}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Branch Activity Heatmap",
+      "type": "timeseries",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\"}[1h])) by (repository, branch) * 3600",
+          "legendFormat": "{{repository}}/{{branch}}"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Branch Performance (Avg Duration)",
+      "type": "table",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(rate(github_actions_duration_seconds_sum{github_event_type=\"workflow_run\",organization=~\"$organization\"}[7d])) by (repository, branch, workflow) / sum(rate(github_actions_duration_seconds_count{github_event_type=\"workflow_run\",organization=~\"$organization\"}[7d])) by (repository, branch, workflow)",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "repository": "Repository",
+              "branch": "Branch",
+              "workflow": "Workflow",
+              "Value": "Avg Duration (s)"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Avg Duration (s)",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 5,
+      "title": "Branch Success Rates",
+      "type": "table",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\",conclusion=\"success\"}[7d])) by (repository, branch) / sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\"}[7d])) by (repository, branch) * 100",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "repository": "Repository",
+              "branch": "Branch",
+              "Value": "Success Rate (%)"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Success Rate (%)",
+                "desc": false
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Success Rate (%)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "value": 0,
+                      "color": "red"
+                    },
+                    {
+                      "value": 80,
+                      "color": "yellow"
+                    },
+                    {
+                      "value": 95,
+                      "color": "green"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "title": "Most Active Branches",
+      "type": "bargauge",
+      "datasource": "${datasource}",
+      "targets": [
+        {
+          "expr": "topk(20, sum(increase(github_actions_calls_total{github_event_type=\"workflow_run\",organization=~\"$organization\"}[7d])) by (repository, branch))",
+          "legendFormat": "{{repository}}/{{branch}}",
+          "instant": true
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient"
+      }
+    }
+  ]
+}

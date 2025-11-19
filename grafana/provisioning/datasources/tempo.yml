@@ -1,0 +1,41 @@
+apiVersion: 1
+
+datasources:
+  - name: Tempo
+    type: tempo
+    access: proxy
+    uid: tempo
+    url: http://tempo:3200
+    jsonData:
+      httpMethod: GET
+      # Service map and node graph DISABLED - we use OTel Collector spanmetrics instead
+      # This prevents "empty ring" errors from metrics-generator queries
+      serviceMap:
+        datasourceUid: null  # Disabled - using Prometheus + spanmetrics
+      nodeGraph:
+        enabled: false  # Disabled - no metrics-generator ring
+      # Enable trace-to-metrics correlation (uses Prometheus, not generator)
+      tracesToMetrics:
+        datasourceUid: prometheus
+        tags:
+          - key: repository
+            value: repository
+          - key: workflow
+            value: workflow
+          - key: branch
+            value: branch
+        queries:
+          - name: 'Workflow execution rate'
+            query: 'rate(github_actions_calls_total{repository="$${repository}",workflow="$${workflow}"}[5m])'
+          - name: 'Success rate'
+            query: 'rate(github_actions_calls_total{repository="$${repository}",workflow="$${workflow}",step_status="success"}[5m]) / rate(github_actions_calls_total{repository="$${repository}",workflow="$${workflow}"}[5m])'
+      # Enable search functionality (doesn't use generator)
+      search:
+        hide: false
+      # TraceQL editor configuration
+      tracesToLogs:
+        datasourceUid: null  # Can add Loki later if needed
+      lokiSearch:
+        datasourceUid: null
+    version: 1
+    editable: true
